@@ -4,6 +4,4 @@
 
 #include "render.hpp"
 
-int add(int a, int b) {
-    return a + b;
-}
+int Add(const int a, int b);

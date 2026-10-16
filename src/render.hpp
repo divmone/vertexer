@@ -4,4 +4,13 @@
 
 #pragma once
 
-int add(int a, int b);
+int Add(int a, int b);
+
+class Test {
+public:
+    Test();
+    ~Test();
+private:
+    int a_;
+    int F();
+};
