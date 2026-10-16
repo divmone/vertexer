@@ -21,6 +21,7 @@ class MyProjectConan(ConanFile):
         self.requires("nlohmann_json/3.12.0")
         self.requires("spdlog/1.17.0")
         self.requires("rmlui/6.2")
+        self.requires("gtest/1.18.0")
 
     def generate(self):
         imgui_res = os.path.join(self.dependencies["imgui"].package_folder, "res", "bindings")

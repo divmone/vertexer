@@ -3,8 +3,9 @@
 //
 
 #include <gtest/gtest.h>
+
 #include <render.hpp>
 
 TEST(AAAA, addTest) {
-    EXPECT_EQ(add(5, 7), 12);
+    EXPECT_EQ(Add(5, 5), 10);
 };
