@@ -10,10 +10,12 @@ class MyProjectConan(ConanFile):
 
     default_options = {
         "imgui/*:with_sdl3_binding": True,
+        "sdl/*:wayland": False,
+        "sdl/*:x11": True,
     }
 
     def requirements(self):
-        self.requires("sdl/3.4.8")
+        self.requires("sdl/3.4.16")
         self.requires("glm/1.0.3")
         self.requires("fastgltf/0.9.0")
         self.requires("stb/cci.20240531")
