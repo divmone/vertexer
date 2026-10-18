@@ -1,9 +1,12 @@
-find_package(SDL3)
+find_package(SDL3 REQUIRED)
 
-add_library(src render.hpp render.cpp)
+add_library(src App.hpp App.cpp)
 
-target_link_libraries(src SDL3::SDL3)
+add_subdirectory(windowSystem)
+add_subdirectory(logSystem)
+add_subdirectory(renderSystem)
+add_subdirectory(sceneSystem)
+
+target_link_libraries(src windowSystem logSystem renderSystem sceneSystem)
 
 target_include_directories(src PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-
-
