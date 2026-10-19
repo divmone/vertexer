@@ -214,10 +214,12 @@ vk::Extent2D VulkanContext::chooseSwapExtent(
         return capabilities.currentExtent;
     }
 
-    SDL_GetWindowSizeInPixels(m_window, &width_, &height_);
+    std::tie(width_, height_) = extentProvider_.GetExtentSizes();
 
-    return {std::clamp<uint32_t>(width_, capabilities.minImageExtent.width,
-                                 capabilities.maxImageExtent.width),
+    return {
+        .width = std::clamp<uint32_t>(width_, capabilities.minImageExtent.width,
+                                      capabilities.maxImageExtent.width),
+        .height =
             std::clamp<uint32_t>(height_, capabilities.minImageExtent.height,
                                  capabilities.maxImageExtent.height)};
 }

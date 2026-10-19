@@ -4,14 +4,14 @@
 
 #pragma once
 #include <vector>
-#include "MeshData.hpp"
+
 #include "types/Object.hpp"
 
 class Scene {
 public:
-    Object& addObject(uint32_t idx, const std::string &name);
-    std::vector<Object>& getObjects();
+    Object&              AddObject(uint32_t idx, const std::string& name);
+    std::vector<Object>& GetObjects();
 private:
     std::vector<Object> objects_;
-    size_t counter{0};
+    size_t              counter_{0};
 };

@@ -95,6 +95,7 @@ private:
 
     SurfaceProvider   surfaceProvider_;
     ExtensionProvider extensionProvider_;
+    ExtentProvider extentProvider_;
 
     vk::raii::Context        m_context;
     vk::raii::Instance       m_instance{nullptr};

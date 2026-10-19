@@ -3,11 +3,12 @@
 //
 
 #include "Scene.hpp"
-Object& Scene::addObject(uint32_t idx, const std::string &name) {
-    objects_.push_back({counter++, name, idx});
+
+Object& Scene::AddObject(uint32_t idx, const std::string& name) {
+    objects_.push_back({counter_++, name, idx});
     return objects_.back();
 }
 
-std::vector<Object> & Scene::getObjects() {
+std::vector<Object>& Scene::GetObjects() {
     return objects_;
 }
