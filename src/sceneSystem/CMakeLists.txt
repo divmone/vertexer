@@ -9,6 +9,8 @@ add_library(
         Scene.hpp
         Scene.cpp
         types/Object.hpp
+        Camera.hpp
+        Camera.cpp
 )
 
 target_link_libraries(sceneSystem logSystem glm fastgltf::fastgltf nlohmann_json::nlohmann_json stb::stb)

@@ -6,6 +6,9 @@ add_subdirectory(windowSystem)
 add_subdirectory(logSystem)
 add_subdirectory(renderSystem)
 add_subdirectory(sceneSystem)
+add_subdirectory(resourceSystem)
+add_subdirectory(platformSystem)
+add_subdirectory(inputSystem)
 
 target_link_libraries(src windowSystem logSystem renderSystem sceneSystem)
 

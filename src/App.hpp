@@ -4,8 +4,12 @@
 
 #pragma once
 
+#include "Camera.hpp"
+#include "Scene.hpp"
+#include "VulkanContext.hpp"
+#include "inputSystem/InputSystem.hpp"
 #include "logSystem/Logger.hpp"
-#include "windowSystem/Window.hpp"
+#include "windowSystem/SDLWindow.hpp"
 
 class App {
 public:
@@ -14,7 +18,19 @@ public:
 
     void Run();
 private:
-    bool   isRunning_;
+    bool isRunning_;
     Logger logger_;
-    Window window_;
+    SDLWindow window_;
+    VulkanContext vulkanContext_;
+    Camera camera_{glm::vec3(5, 5, 0), {0, 1, 0}, 180, -45};
+    Scene scene_;
+    InputSystem inputSystem_;
+
+    bool pressedKeys_[256]{false};
+    float lastX{0.0f};
+    float lastY{0.0f};
+    // std::unordered_set<SDL_Keycode> pressedKeys_;
+    void init();
+    void initScene();
+    void update(float deltaTime);
 };

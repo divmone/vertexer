@@ -1,7 +1,10 @@
 #pragma once
 
 #include <glm/glm.hpp>
+#include <vulkan/vulkan_raii.hpp>
 
+#include "IExtentProvider.hpp"
+#include "NativeWindowHandler.hpp"
 #include "PSO.hpp"
 #include "types/MeshData.hpp"
 #include "types/Providers.hpp"
@@ -31,10 +34,18 @@ struct UBObject {
     alignas(16) glm::mat4 proj;
 };
 
+struct EngineStats {
+    float frameTime{0.0f};
+    int triangleCount{0};
+    int drawcallCount{0};
+    float sceneUpdateTime{0.0f};
+    float meshDrawTime{0.0f};
+};
+
 class VulkanContext {
 public:
-    VulkanContext(const SurfaceProvider&   surfaceProvider,
-                  const ExtensionProvider& extensionProvider);
+    VulkanContext(NativeWindowHandler windowHandler,
+                  const ExtentProvider& extentProvider);
     ~VulkanContext();
 
     void drawScene(Scene& scene, EngineStats& stats);
@@ -42,10 +53,10 @@ public:
     void recreateContext();
     void processMinimizedWindow();
 
-    void     setViewMatrix(const glm::mat4&);
-    void     setProjMatrix(const glm::mat4&);
+    void setViewMatrix(const glm::mat4&);
+    void setProjMatrix(const glm::mat4&);
     uint32_t loadAsset(const std::string& path);
-    void     finishLoading();
+    void finishLoading();
 private:
     void initVulkan();
     void createInstance();
@@ -62,13 +73,13 @@ private:
     void createCommandPool();
     void createCommandBuffer();
 
-    void processNodes(unsigned         root,
+    void processNodes(unsigned root,
                       const glm::mat4& mat,
-                      const VkModel&   model,
-                      uint32_t         modelIndex);
-    void drawBlendNodes(unsigned         root,
+                      const VkModel& model,
+                      uint32_t modelIndex);
+    void drawBlendNodes(unsigned root,
                         const glm::mat4& mat,
-                        const VkModel&   model);
+                        const VkModel& model);
 
     void recordCommandBuffer(uint32_t index, Scene& scene, EngineStats& stats);
     void createSyncObjects();
@@ -81,35 +92,34 @@ private:
     void createDescriptorSets();
     void createDepthResources();
 
-    uint32_t findMemoryType(uint32_t                typeFilter,
+    uint32_t findMemoryType(uint32_t typeFilter,
                             vk::MemoryPropertyFlags properties);
-    void     copyBufferToImage(vk::raii::CommandBuffer& commandBuffer,
-                               const vk::raii::Buffer&  buffer,
-                               vk::raii::Image&         image,
-                               uint32_t                 width,
-                               uint32_t                 height);
+    void copyBufferToImage(vk::raii::CommandBuffer& commandBuffer,
+                           const vk::raii::Buffer& buffer,
+                           vk::raii::Image& image,
+                           uint32_t width,
+                           uint32_t height);
 
     // SDL_Window* m_window{nullptr};
     int width_{0};
     int height_{0};
 
-    SurfaceProvider   surfaceProvider_;
-    ExtensionProvider extensionProvider_;
+    NativeWindowHandler nativeWindowHandler_;
     ExtentProvider extentProvider_;
 
-    vk::raii::Context        m_context;
-    vk::raii::Instance       m_instance{nullptr};
+    vk::raii::Context m_context;
+    vk::raii::Instance instance_{nullptr};
     vk::raii::PhysicalDevice m_physicalDevice{nullptr};
-    vk::raii::Device         m_device{nullptr};
-    vk::raii::Queue          m_graphicsQueue{nullptr};
+    vk::raii::Device m_device{nullptr};
+    vk::raii::Queue m_graphicsQueue{nullptr};
 
     vk::raii::SurfaceKHR m_surfaceKHR{nullptr};
 
     vk::raii::SwapchainKHR m_swapchain{nullptr};
     std::vector<vk::Image> m_swapChainImages{nullptr};
     ;
-    vk::SurfaceFormatKHR             m_swapChainSurfaceFormat;
-    vk::Extent2D                     m_swapChainExtent;
+    vk::SurfaceFormatKHR m_swapChainSurfaceFormat;
+    vk::Extent2D m_swapChainExtent;
     std::vector<vk::raii::ImageView> m_swapChainImageViews;
 
     vk::raii::DescriptorSetLayout descriptorSetLayout{nullptr};
@@ -118,41 +128,41 @@ private:
     std::unique_ptr<PSO> graphicsPSO_;
 
     vk::raii::PipelineLayout m_pipelineLayout{nullptr};
-    vk::raii::Pipeline       m_graphicsPipeline{nullptr};
+    vk::raii::Pipeline m_graphicsPipeline{nullptr};
 
     vk::raii::Pipeline blendingPipeline{nullptr};
 
     vk::raii::PipelineLayout skyPipelineLayout{nullptr};
-    vk::raii::Pipeline       skyPipeline{nullptr};
+    vk::raii::Pipeline skyPipeline{nullptr};
 
-    vk::raii::CommandPool                m_commandPool{nullptr};
-    uint32_t                             queueFamilyIndex{0};
+    vk::raii::CommandPool m_commandPool{nullptr};
+    uint32_t queueFamilyIndex{0};
     std::vector<vk::raii::CommandBuffer> m_commandBuffer;
-    std::vector<vk::raii::Semaphore>     presentCompleteSemaphore;
-    std::vector<vk::raii::Semaphore>     renderFinishedSemaphore;
-    std::vector<vk::raii::Fence>         drawFence;
+    std::vector<vk::raii::Semaphore> presentCompleteSemaphore;
+    std::vector<vk::raii::Semaphore> renderFinishedSemaphore;
+    std::vector<vk::raii::Fence> drawFence;
 
-    uint32_t                            frameIndex{0};
-    std::vector<vk::raii::Buffer>       uniformBuffers;
+    uint32_t frameIndex{0};
+    std::vector<vk::raii::Buffer> uniformBuffers;
     std::vector<vk::raii::DeviceMemory> uniformDevicesMemory;
-    std::vector<void*>                  uniformBuffersMapped;
-    vk::raii::DescriptorPool            descriptorPool{nullptr};
-    vk::raii::DescriptorPool            imguiDescriptorPool{nullptr};
+    std::vector<void*> uniformBuffersMapped;
+    vk::raii::DescriptorPool descriptorPool{nullptr};
+    vk::raii::DescriptorPool imguiDescriptorPool{nullptr};
 
     std::vector<vk::raii::DescriptorSet> descriptorSets;
 
-    vk::raii::Image        depthImage{nullptr};
+    vk::raii::Image depthImage{nullptr};
     vk::raii::DeviceMemory depthImageMemory{nullptr};
-    vk::raii::ImageView    depthImageView{nullptr};
-    vk::Format             depthFormat;
+    vk::raii::ImageView depthImageView{nullptr};
+    vk::Format depthFormat;
 
-    std::vector<Texture>                 textures_;
+    std::vector<Texture> textures_;
     std::vector<vk::raii::DescriptorSet> blendDescriptorSets;
-    void                                 createBlendDescriptorSetLayout();
-    void                                 createBlendDescriptorSet();
+    void createBlendDescriptorSetLayout();
+    void createBlendDescriptorSet();
 
-    uint32_t     textureCounter{0};
-    void         createTexture();
+    uint32_t textureCounter{0};
+    void createTexture();
     vk::Extent2D chooseSwapExtent(
         const vk::SurfaceCapabilitiesKHR& capabilities);
 
@@ -169,52 +179,52 @@ private:
 
     static std::vector<char> loadShader(const std::string& filename);
 
-    void transition_image_layout(vk::Image               image,
-                                 vk::ImageLayout         old_layout,
-                                 vk::ImageLayout         new_layout,
-                                 vk::AccessFlags2        src_access_mask,
-                                 vk::AccessFlags2        dst_access_mask,
+    void transition_image_layout(vk::Image image,
+                                 vk::ImageLayout old_layout,
+                                 vk::ImageLayout new_layout,
+                                 vk::AccessFlags2 src_access_mask,
+                                 vk::AccessFlags2 dst_access_mask,
                                  vk::PipelineStageFlags2 src_stage_mask,
                                  vk::PipelineStageFlags2 dst_stage_mask,
-                                 vk::ImageAspectFlags    image_aspect_flags);
+                                 vk::ImageAspectFlags image_aspect_flags);
 
     void transitionImageLayout(vk::raii::CommandBuffer& commandBuffer,
-                               const vk::raii::Image&   image,
-                               vk::ImageLayout          oldLayout,
-                               vk::ImageLayout          newLayout);
+                               const vk::raii::Image& image,
+                               vk::ImageLayout oldLayout,
+                               vk::ImageLayout newLayout);
 
     std::pair<vk::raii::Image, vk::raii::DeviceMemory> createImage(
-        uint32_t                width,
-        uint32_t                height,
-        vk::Format              format,
-        vk::ImageTiling         tiling,
-        vk::ImageUsageFlags     usage,
+        uint32_t width,
+        uint32_t height,
+        vk::Format format,
+        vk::ImageTiling tiling,
+        vk::ImageUsageFlags usage,
         vk::MemoryPropertyFlags properties);
-    vk::raii::ImageView createImageView(const vk::Image&     image,
-                                        vk::Format           format,
+    vk::raii::ImageView createImageView(const vk::Image& image,
+                                        vk::Format format,
                                         vk::ImageAspectFlags aspectFlags);
     std::pair<vk::raii::Buffer, vk::raii::DeviceMemory> createBuffer(
-        vk::DeviceSize          size,
-        vk::BufferUsageFlags    usage,
+        vk::DeviceSize size,
+        vk::BufferUsageFlags usage,
         vk::MemoryPropertyFlags properties);
 
     vk::raii::CommandBuffer beginSingleTimeCommand();
     void endSingleTimeCommand(vk::raii::CommandBuffer&& commandBuffer);
 
     vk::Format findSupportedFormat(const std::vector<vk::Format>& candidates,
-                                   vk::ImageTiling                tiling,
-                                   vk::FormatFeatureFlags         features);
+                                   vk::ImageTiling tiling,
+                                   vk::FormatFeatureFlags features);
     vk::Format findDepthFormat();
 
     void cleanupSwapChain();
 
     template <typename T>
     std::pair<vk::raii::Buffer, vk::raii::DeviceMemory> createUniversalBuffer(
-        vk::raii::CommandBuffer&             commandBuffer,
-        std::vector<vk::raii::Buffer>&       stagingBuffersKeepAlive,
+        vk::raii::CommandBuffer& commandBuffer,
+        std::vector<vk::raii::Buffer>& stagingBuffersKeepAlive,
         std::vector<vk::raii::DeviceMemory>& stagingMemoriesKeepAlive,
-        const std::vector<T>&                arr,
-        vk::BufferUsageFlagBits              flag) {
+        const std::vector<T>& arr,
+        vk::BufferUsageFlagBits flag) {
         vk::DeviceSize bufferSize = arr.size() * sizeof(arr[0]);
         auto [stagingBuffer, stagingDeviceMemory] =
             createBuffer(bufferSize, vk::BufferUsageFlagBits::eTransferSrc,
@@ -242,10 +252,10 @@ private:
     std::vector<VkModel> models_;
 
     std::vector<Texture> createTexturesFromImages(
-        vk::raii::CommandBuffer&             commandBuffer,
-        std::vector<vk::raii::Buffer>&       stagingBuffersKeepAlive,
+        vk::raii::CommandBuffer& commandBuffer,
+        std::vector<vk::raii::Buffer>& stagingBuffersKeepAlive,
         std::vector<vk::raii::DeviceMemory>& stagingMemoriesKeepAlive,
-        const Model&                         model);
+        const Model& model);
 
     VkModel loadModel(const std::string& path);
 
