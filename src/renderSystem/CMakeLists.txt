@@ -11,10 +11,11 @@ add_library(
         VulkanContext.hpp VulkanContext.cpp
         PipelineBuilder.hpp PipelineBuilder.cpp
         PSO.hpp PSO.cpp
-        types/MeshData.hpp
         types/Providers.hpp
         types/VulkanVertex.hpp
         types/DrawCall.hpp
+        types/VulkanModel.hpp
+        types/VulkanTexture.hpp
 )
 
 target_link_libraries(renderSystem logSystem sceneSystem resourceSystem platformSystem typesSystem Vulkan::Vulkan glm)

@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "types/ImageData.hpp"
+#include "types/Model.hpp"
 
 class AssetLoader {
 public:

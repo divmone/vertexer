@@ -4,16 +4,18 @@
 
 #include "App.hpp"
 
+#include "EngineStats.hpp"
 #include "SceneLoader.hpp"
 
 App::App()
     : isRunning_(true),
       logger_("APP", true),
-      window_("APP", 500, 500),
+      window_("APP", 1000, 1000),
       vulkanContext_(window_.GetNativeHandler(), window_.GetExtentProvider()) {
     window_.SetOnEvent([&](SDL_Event& e) {
 
     });
+    init();
 }
 
 void App::Run() {
@@ -52,8 +54,8 @@ void App::init() {
 }
 
 void App::initScene() {
-    scene_ =
-        SceneLoader::loadSceneFromJSON(vulkanContext_, "../assets/scene.json");
+    scene_ = SceneLoader::loadSceneFromJSON(vulkanContext_,
+                                            "../../../scene/scene.json");
 }
 
 void App::update(float deltaTime) {

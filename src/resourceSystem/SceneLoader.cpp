@@ -8,7 +8,7 @@
 #include <nlohmann/json.hpp>
 
 #include "Logger.hpp"
-#include "../render/VulkanContext.hpp"
+#include "VulkanContext.hpp"
 
 glm::vec3 convertJsonToVec3(nlohmann::json& json) {
     glm::vec3 vec;
@@ -19,7 +19,8 @@ glm::vec3 convertJsonToVec3(nlohmann::json& json) {
     return vec;
 }
 
-Scene SceneLoader::loadSceneFromJSON(VulkanContext& vkContext, const std::string &path) {
+Scene SceneLoader::loadSceneFromJSON(VulkanContext& vkContext,
+                                     const std::string& path) {
     using nlohmann::json;
 
     if (!std::filesystem::exists(path)) {
@@ -36,19 +37,22 @@ Scene SceneLoader::loadSceneFromJSON(VulkanContext& vkContext, const std::string
         json jsonScene = json::parse(file);
 
         auto sceneObj = jsonScene["scene"];
-        for (auto& jsonObj: sceneObj["objects"]) {
+        for (auto& jsonObj : sceneObj["objects"]) {
             auto idx = vkContext.loadAsset(jsonObj["model"].get<std::string>());
             const auto& name = jsonObj["name"].get<std::string>();
-            auto& obj= scene.addObject(idx, name);
+            auto& obj = scene.AddObject(idx, name);
 
             if (jsonObj.contains("position")) {
                 obj.transform.pos = convertJsonToVec3(jsonObj["position"]);
             }
 
             if (jsonObj.contains("rotation")) {
-                obj.transform.rotate({1, 0, 0}, convertJsonToVec3(jsonObj["rotation"]).x);
-                obj.transform.rotate({0, 1, 0}, convertJsonToVec3(jsonObj["rotation"]).y);
-                obj.transform.rotate({0, 0, 1}, convertJsonToVec3(jsonObj["rotation"]).z);
+                obj.transform.rotate({1, 0, 0},
+                                     convertJsonToVec3(jsonObj["rotation"]).x);
+                obj.transform.rotate({0, 1, 0},
+                                     convertJsonToVec3(jsonObj["rotation"]).y);
+                obj.transform.rotate({0, 0, 1},
+                                     convertJsonToVec3(jsonObj["rotation"]).z);
             }
 
             if (jsonObj.contains("scale")) {
@@ -56,11 +60,11 @@ Scene SceneLoader::loadSceneFromJSON(VulkanContext& vkContext, const std::string
             }
         }
     } catch (const json::parse_error& e) {
-        LOG_ERROR("%s", e.what());
+        LOG_ERROR(e.what());
     } catch (const json::type_error& e) {
-        LOG_ERROR("%s", e.what());
+        LOG_ERROR(e.what());
     } catch (const std::runtime_error& e) {
-        LOG_ERROR("%s", e.what());
+        LOG_ERROR(e.what());
     }
 
     vkContext.finishLoading();

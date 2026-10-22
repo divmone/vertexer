@@ -6,7 +6,7 @@
 
 #include <vulkan/vulkan_raii.hpp>
 
-#include "typesSystem/MeshData.hpp"
+#include "Vertex.hpp"
 
 struct VulkanVertex : Vertex {
     static vk::VertexInputBindingDescription getBindingDescription() {

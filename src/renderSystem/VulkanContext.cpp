@@ -1,9 +1,5 @@
 #include "VulkanContext.hpp"
 
-#if defined(_WIN64)
-#include <vulkan/vulkan_win32.h>
-#endif
-
 #include <cmath>
 #include <fstream>
 #include <limits>
@@ -16,16 +12,10 @@
 #include <glm/gtx/norm.hpp>
 
 #include "AssetLoader.hpp"
+#include "EngineStats.hpp"
 #include "PipelineBuilder.hpp"
 #include "Scene.hpp"
-#include "types/EngineStats.hpp"
-#include "types/Providers.hpp"
 #include "types/VulkanVertex.hpp"
-// #include "../systems/AssetLoader.hpp"
-// #include "../Scene.hpp"
-
-// #include "../systems/Logger.hpp"
-// #include "../types/EngineStats.hpp"
 
 struct EngineStats;
 
@@ -202,7 +192,7 @@ void VulkanContext::createSurface() {
                 VkWin32SurfaceCreateInfoKHR ci{
                     VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR};
                 ci.hinstance = static_cast<HINSTANCE>(h.hInstance);
-                ci.hwnd = h.hWnd;
+                ci.hwnd = static_cast<HWND>(h.hWnd);
                 vkCreateWin32SurfaceKHR(*instance_, &ci, nullptr, &s);
                 return s;
 #endif
@@ -323,7 +313,8 @@ void VulkanContext::createImageViews() {
 }
 
 void VulkanContext::createGraphicsPipeline() {
-    auto shaderModule = createShaderModule(loadShader("../shaders/shader.spv"));
+    auto shaderModule =
+        createShaderModule(loadShader("../../../shaders/shader.spv"));
 
     m_pipelineLayout = PipelineBuilder::createPipelineLayout(
         m_device,
@@ -352,7 +343,7 @@ void VulkanContext::createGraphicsPipeline() {
                            .layout(m_pipelineLayout)
                            .build(m_device);
 
-    shaderModule = createShaderModule(loadShader("../shaders/sky.spv"));
+    shaderModule = createShaderModule(loadShader("../../../shaders/sky.spv"));
     skyPipelineLayout = PipelineBuilder::createPipelineLayout(
         m_device, nullptr,
         {*descriptorSetLayout, *blendingDescriptorSetLayout});
@@ -361,7 +352,7 @@ void VulkanContext::createGraphicsPipeline() {
     blendingPipeline = skyPipelineBuilder.shaders(shaderModule)
                            .colorFormat(m_swapChainSurfaceFormat.format)
                            .depthFormat(depthFormat)
-                           .vertexType<Vertex>()
+                           .vertexType<VulkanVertex>()
                            .layout(m_pipelineLayout)
                            .build(m_device);
 }

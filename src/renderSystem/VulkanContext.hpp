@@ -1,13 +1,20 @@
 #pragma once
 
 #include <glm/glm.hpp>
+
+#if defined(_WIN32)
+#define VK_USE_PLATFORM_WIN32_KHR
+#define WIN32_LEAN_AND_MEAN
+#endif
 #include <vulkan/vulkan_raii.hpp>
 
 #include "IExtentProvider.hpp"
 #include "NativeWindowHandler.hpp"
 #include "PSO.hpp"
-#include "types/MeshData.hpp"
+#include "types/DrawCall.hpp"
+#include "types/Model.hpp"
 #include "types/Providers.hpp"
+#include "types/VulkanModel.hpp"
 
 struct EngineStats;
 class Scene;
