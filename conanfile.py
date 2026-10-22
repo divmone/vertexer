@@ -9,6 +9,8 @@ class MyProjectConan(ConanFile):
     generators = "CMakeDeps", "CMakeToolchain"
 
     default_options = {
+        # "sdl/*:wayland": True,
+        # "sdl/*:x11": True,
         "imgui/*:with_sdl3_binding": True,
         "sdl/*:wayland": False,
         "sdl/*:x11": True,
