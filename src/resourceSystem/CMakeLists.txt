@@ -10,6 +10,6 @@ add_library(resourceSystem STATIC
         SceneLoader.cpp
 )
 
-target_link_libraries(resourceSystem logSystem)
+target_link_libraries(resourceSystem logSystem fastgltf::fastgltf)
 
 target_include_directories(resourceSystem PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

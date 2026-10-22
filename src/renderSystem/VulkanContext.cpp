@@ -20,6 +20,7 @@
 #include "Scene.hpp"
 #include "types/EngineStats.hpp"
 #include "types/Providers.hpp"
+#include "types/VulkanVertex.hpp"
 // #include "../systems/AssetLoader.hpp"
 // #include "../Scene.hpp"
 
@@ -336,7 +337,7 @@ void VulkanContext::createGraphicsPipeline() {
     m_graphicsPipeline = builder.shaders(shaderModule)
                              .colorFormat(m_swapChainSurfaceFormat.format)
                              .depthFormat(depthFormat)
-                             .vertexType<Vertex>()
+                             .vertexType<VulkanVertex>()
                              .depthTestOn()
                              .layout(m_pipelineLayout)
                              .build(m_device);
@@ -345,7 +346,7 @@ void VulkanContext::createGraphicsPipeline() {
     blendingPipeline = blendPipelineBuilder.shaders(shaderModule)
                            .colorFormat(m_swapChainSurfaceFormat.format)
                            .depthFormat(depthFormat)
-                           .vertexType<Vertex>()
+                           .vertexType<VulkanVertex>()
                            .blendingOn()
                            .depthTestOff()
                            .layout(m_pipelineLayout)

@@ -11,11 +11,12 @@ add_library(
         VulkanContext.hpp VulkanContext.cpp
         PipelineBuilder.hpp PipelineBuilder.cpp
         PSO.hpp PSO.cpp
-        types/EngineStats.hpp
         types/MeshData.hpp
         types/Providers.hpp
+        types/VulkanVertex.hpp
+        types/DrawCall.hpp
 )
 
-target_link_libraries(renderSystem logSystem sceneSystem resourceSystem platformSystem Vulkan::Vulkan glm)
+target_link_libraries(renderSystem logSystem sceneSystem resourceSystem platformSystem typesSystem Vulkan::Vulkan glm)
 target_include_directories(renderSystem PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_definitions(renderSystem PUBLIC VULKAN_HPP_NO_STRUCT_CONSTRUCTORS)

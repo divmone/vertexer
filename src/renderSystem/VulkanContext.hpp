@@ -34,14 +34,6 @@ struct UBObject {
     alignas(16) glm::mat4 proj;
 };
 
-struct EngineStats {
-    float frameTime{0.0f};
-    int triangleCount{0};
-    int drawcallCount{0};
-    float sceneUpdateTime{0.0f};
-    float meshDrawTime{0.0f};
-};
-
 class VulkanContext {
 public:
     VulkanContext(NativeWindowHandler windowHandler,
