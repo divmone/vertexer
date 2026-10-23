@@ -4,22 +4,23 @@
 
 #include "PipelineBuilder.hpp"
 
-PipelineBuilder &PipelineBuilder::layout(const vk::PipelineLayout &pipelineLayout) {
+PipelineBuilder& PipelineBuilder::layout(
+    const vk::PipelineLayout& pipelineLayout) {
     layout_ = pipelineLayout;
     return *this;
 }
 
-PipelineBuilder &PipelineBuilder::colorFormat(vk::Format f) {
+PipelineBuilder& PipelineBuilder::colorFormat(vk::Format f) {
     colorFormat_ = f;
     return *this;
 }
 
-PipelineBuilder &PipelineBuilder::depthFormat(vk::Format f) {
+PipelineBuilder& PipelineBuilder::depthFormat(vk::Format f) {
     depthFormat_ = f;
     return *this;
 }
 
-PipelineBuilder &PipelineBuilder::blendingOn() {
+PipelineBuilder& PipelineBuilder::blendingOn() {
     colorBlendAttachment_ = {
         .blendEnable = vk::True,
         .srcColorBlendFactor = vk::BlendFactor::eSrcAlpha,
@@ -28,35 +29,33 @@ PipelineBuilder &PipelineBuilder::blendingOn() {
         .srcAlphaBlendFactor = vk::BlendFactor::eOne,
         .dstAlphaBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha,
         .alphaBlendOp = vk::BlendOp::eAdd,
-        .colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
-                          vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA
-    };
+        .colorWriteMask =
+            vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
+            vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA};
 
     return *this;
 }
 
-PipelineBuilder &PipelineBuilder::blendingOff() {
-    colorBlendAttachment_ = {
-        .blendEnable = vk::False,
-        .colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
-                          vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA
-    };
+PipelineBuilder& PipelineBuilder::blendingOff() {
+    colorBlendAttachment_ = {.blendEnable = vk::False,
+                             .colorWriteMask = vk::ColorComponentFlagBits::eR |
+                                               vk::ColorComponentFlagBits::eG |
+                                               vk::ColorComponentFlagBits::eB |
+                                               vk::ColorComponentFlagBits::eA};
     return *this;
 }
 
-PipelineBuilder & PipelineBuilder::depthTestOn() {
-    depthStencilStateInfo_ = {
-        .depthTestEnable = vk::True,
-        .depthWriteEnable = vk::True,
-        .depthCompareOp = vk::CompareOp::eLess,
-        .depthBoundsTestEnable = vk::False,
-        .stencilTestEnable = vk::False
-    };
+PipelineBuilder& PipelineBuilder::depthTestOn() {
+    depthStencilStateInfo_ = {.depthTestEnable = vk::True,
+                              .depthWriteEnable = vk::True,
+                              .depthCompareOp = vk::CompareOp::eLess,
+                              .depthBoundsTestEnable = vk::False,
+                              .stencilTestEnable = vk::False};
 
     return *this;
 }
 
-PipelineBuilder & PipelineBuilder::depthTestOff() {
+PipelineBuilder& PipelineBuilder::depthTestOff() {
     depthStencilStateInfo_ = {
         .depthTestEnable = vk::True,
         .depthWriteEnable = vk::False,
@@ -66,39 +65,32 @@ PipelineBuilder & PipelineBuilder::depthTestOff() {
     return *this;
 }
 
-PipelineBuilder &PipelineBuilder::shaders(const vk::ShaderModule &shaderModule, const char *vertName,
-                                          const char *fragName) {
-    stages_ = {
-        {
-            {
-                .stage = vk::ShaderStageFlagBits::eVertex,
-                .module = shaderModule,
-                .pName = vertName
-            },
-            {
-                .stage = vk::ShaderStageFlagBits::eFragment,
-                .module = shaderModule,
-                .pName = fragName
-            }
-        }
-    };
+PipelineBuilder& PipelineBuilder::shaders(const vk::ShaderModule& shaderModule,
+                                          const char* vertName,
+                                          const char* fragName) {
+    stages_ = {{{.stage = vk::ShaderStageFlagBits::eVertex,
+                 .module = shaderModule,
+                 .pName = vertName},
+                {.stage = vk::ShaderStageFlagBits::eFragment,
+                 .module = shaderModule,
+                 .pName = fragName}}};
 
     return *this;
 }
 
-vk::raii::Pipeline PipelineBuilder::build(const vk::raii::Device &device) {
-    constexpr std::array dynamicStates {vk::DynamicState::eViewport, vk::DynamicState::eScissor};
+vk::raii::Pipeline PipelineBuilder::build(const vk::raii::Device& device) {
+    constexpr std::array dynamicStates{vk::DynamicState::eViewport,
+                                       vk::DynamicState::eScissor};
 
-    vk::PipelineViewportStateCreateInfo viewportState{.viewportCount = 1, .scissorCount = 1};
+    vk::PipelineViewportStateCreateInfo viewportState{.viewportCount = 1,
+                                                      .scissorCount = 1};
 
     vk::PipelineDynamicStateCreateInfo dynamicStateCreateInfo{
         .dynamicStateCount = static_cast<uint32_t>(dynamicStates.size()),
-        .pDynamicStates = dynamicStates.data()
-    };
+        .pDynamicStates = dynamicStates.data()};
 
     vk::PipelineInputAssemblyStateCreateInfo inputAssemblyStateCreateInfo{
-        .topology = vk::PrimitiveTopology::eTriangleList
-    };
+        .topology = vk::PrimitiveTopology::eTriangleList};
 
     vk::PipelineRasterizationStateCreateInfo rasterizer{
         .depthClampEnable = vk::False,
@@ -107,65 +99,62 @@ vk::raii::Pipeline PipelineBuilder::build(const vk::raii::Device &device) {
         .cullMode = vk::CullModeFlagBits::eBack,
         .frontFace = vk::FrontFace::eCounterClockwise,
         .depthBiasEnable = vk::True,
-        .lineWidth = 1.0f
-    };
+        .lineWidth = 1.0f};
 
     vk::PipelineMultisampleStateCreateInfo multisampling{
-        .rasterizationSamples = vk::SampleCountFlagBits::e1, .sampleShadingEnable = vk::False
-    };
-
+        .rasterizationSamples = vk::SampleCountFlagBits::e1,
+        .sampleShadingEnable = vk::False};
 
     vk::PipelineColorBlendStateCreateInfo colorBlending{
-        .logicOpEnable = vk::False, .logicOp = vk::LogicOp::eCopy, .attachmentCount = 1,
-        .pAttachments = &colorBlendAttachment_
-    };
+        .logicOpEnable = vk::False,
+        .logicOp = vk::LogicOp::eCopy,
+        .attachmentCount = 1,
+        .pAttachments = &colorBlendAttachment_};
 
     vk::PipelineRenderingCreateInfo pipelineRenderingCreateInfo{
-        .colorAttachmentCount = 1,
-        .pColorAttachmentFormats = &colorFormat_
-    };
+        .colorAttachmentCount = 1, .pColorAttachmentFormats = &colorFormat_};
 
     vk::PipelineVertexInputStateCreateInfo vertexInputStateCreateInfo{
         .vertexBindingDescriptionCount = 1,
         .pVertexBindingDescriptions = &vertexInputBindingDescription_,
-        .vertexAttributeDescriptionCount = static_cast<uint32_t>(vertexInputAttributeDescription_.size()),
+        .vertexAttributeDescriptionCount =
+            static_cast<uint32_t>(vertexInputAttributeDescription_.size()),
         .pVertexAttributeDescriptions = vertexInputAttributeDescription_.data(),
     };
 
-    vk::StructureChain<vk::GraphicsPipelineCreateInfo, vk::PipelineRenderingCreateInfo> pipelineCreateInfoChain{
-        {
-            .stageCount = static_cast<uint32_t>(stages_.size()),
-            .pStages = stages_.data(),
-            .pVertexInputState = &vertexInputStateCreateInfo,
-            .pInputAssemblyState = &inputAssemblyStateCreateInfo,
-            .pViewportState = &viewportState,
-            .pRasterizationState = &rasterizer,
-            .pMultisampleState = &multisampling,
-            .pDepthStencilState = &depthStencilStateInfo_,
-            .pColorBlendState = &colorBlending,
-            .pDynamicState = &dynamicStateCreateInfo,
-            .layout = layout_,
-            .renderPass = nullptr
-        },
-        {
-            .colorAttachmentCount = 1, .pColorAttachmentFormats = &colorFormat_,
-            .depthAttachmentFormat = depthFormat_
-        }
-    };
+    vk::StructureChain<vk::GraphicsPipelineCreateInfo,
+                       vk::PipelineRenderingCreateInfo>
+        pipelineCreateInfoChain{
+            {.stageCount = static_cast<uint32_t>(stages_.size()),
+             .pStages = stages_.data(),
+             .pVertexInputState = &vertexInputStateCreateInfo,
+             .pInputAssemblyState = &inputAssemblyStateCreateInfo,
+             .pViewportState = &viewportState,
+             .pRasterizationState = &rasterizer,
+             .pMultisampleState = &multisampling,
+             .pDepthStencilState = &depthStencilStateInfo_,
+             .pColorBlendState = &colorBlending,
+             .pDynamicState = &dynamicStateCreateInfo,
+             .layout = layout_,
+             .renderPass = nullptr},
+            {.colorAttachmentCount = 1,
+             .pColorAttachmentFormats = &colorFormat_,
+             .depthAttachmentFormat = depthFormat_}};
 
-    return std::move(vk::raii::Pipeline(device, nullptr, pipelineCreateInfoChain.get<vk::GraphicsPipelineCreateInfo>()));
+    return vk::raii::Pipeline(
+        device, nullptr,
+        pipelineCreateInfoChain.get<vk::GraphicsPipelineCreateInfo>());
 }
 
-vk::raii::PipelineLayout PipelineBuilder::createPipelineLayout(const vk::raii::Device &device,
-                                                               vk::ArrayProxy<const vk::PushConstantRange> ranges,
-                                                               vk::ArrayProxy<const vk::DescriptorSetLayout> layouts) {
+vk::raii::PipelineLayout PipelineBuilder::createPipelineLayout(
+    const vk::raii::Device& device,
+    vk::ArrayProxy<const vk::PushConstantRange> ranges,
+    vk::ArrayProxy<const vk::DescriptorSetLayout> layouts) {
     vk::PipelineLayoutCreateInfo createInfo{
         .setLayoutCount = layouts.size(),
         .pSetLayouts = layouts.data(),
         .pushConstantRangeCount = ranges.size(),
-        .pPushConstantRanges = ranges.data()
-    };
-
+        .pPushConstantRanges = ranges.data()};
 
     return vk::raii::PipelineLayout(device, createInfo);
 }
