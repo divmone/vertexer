@@ -10,6 +10,8 @@
 
 class VulkanContext;
 
+// TODO FIX IT!!!!
+
 class SceneLoader {
 public:
     static Scene loadSceneFromJSON(VulkanContext& vkContext,

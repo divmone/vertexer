@@ -11,8 +11,8 @@
 #include <chrono>
 #include <glm/gtx/norm.hpp>
 
+#include "../typesSystem/include/typesSystem/EngineStats.hpp"
 #include "AssetLoader.hpp"
-#include "EngineStats.hpp"
 #include "PipelineBuilder.hpp"
 #include "Scene.hpp"
 #include "types/VulkanVertex.hpp"

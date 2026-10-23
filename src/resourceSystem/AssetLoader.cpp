@@ -18,9 +18,9 @@
 #include <future>
 #include <iostream>
 
+#include "../typesSystem/include/typesSystem/MeshData.hpp"
+#include "../typesSystem/include/typesSystem/Vertex.hpp"
 #include "Logger.hpp"
-#include "MeshData.hpp"
-#include "Vertex.hpp"
 
 namespace {
 glm::mat4 getNodeLocalMatrix(const fastgltf::Node& node) {
