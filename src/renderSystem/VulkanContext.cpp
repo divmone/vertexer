@@ -87,12 +87,18 @@ void VulkanContext::createInstance() {
 
     auto sdlExtensions = std::visit(
         overloaded{
-            [&](const Win32WindowHandler& h) -> std::vector<const char*> {
+            [&](const Win32WindowHandler&) -> std::vector<const char*> {
                 return {"VK_KHR_surface", "VK_KHR_win32_surface"};
             },
-            [&](const WaylandWindowHandler& h) -> std::vector<const char*> {},
-            [&](const X11WindowHandler& h) -> std::vector<const char*> {},
-            [&](const MacOSWindowHandler& h) -> std::vector<const char*> {},
+            [&](const WaylandWindowHandler&) -> std::vector<const char*> {
+                return {};
+            },
+            [&](const X11WindowHandler&) -> std::vector<const char*> {
+                return {};
+            },
+            [&](const MacOSWindowHandler&) -> std::vector<const char*> {
+                return {};
+            },
         },
         nativeWindowHandler_);
 
@@ -197,13 +203,11 @@ void VulkanContext::createSurface() {
                 return s;
 #endif
             },
-            [&](const WaylandWindowHandler& h) -> VkSurfaceKHR {
+            [&](const WaylandWindowHandler&) -> VkSurfaceKHR {
                 return nullptr;
             },
-            [&](const X11WindowHandler& h) -> VkSurfaceKHR { return nullptr; },
-            [&](const MacOSWindowHandler& h) -> VkSurfaceKHR {
-                return nullptr;
-            },
+            [&](const X11WindowHandler&) -> VkSurfaceKHR { return nullptr; },
+            [&](const MacOSWindowHandler&) -> VkSurfaceKHR { return nullptr; },
         },
         nativeWindowHandler_);
 
