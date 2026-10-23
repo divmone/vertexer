@@ -1,8 +1,6 @@
-add_library(typesSystem
-        INTERFACE
-        MeshData.hpp
-        EngineStats.hpp
-        Vertex.hpp
-)
+add_engine_module(typesSystem
+        include/typesSystem/MeshData.hpp
+        include/typesSystem/EngineStats.hpp
+        include/typesSystem/Vertex.hpp)
 
-target_include_directories(typesSystem INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+set_target_properties(typesSystem PROPERTIES LINKER_LANGUAGE CXX)

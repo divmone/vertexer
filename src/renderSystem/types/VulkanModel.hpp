@@ -6,7 +6,7 @@
 
 #include <vulkan/vulkan_raii.hpp>
 
-#include "MeshData.hpp"
+#include "../../typesSystem/include/typesSystem/MeshData.hpp"
 #include "VulkanTexture.hpp"
 
 struct VkModel {

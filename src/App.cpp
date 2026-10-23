@@ -4,8 +4,8 @@
 
 #include "App.hpp"
 
-#include "EngineStats.hpp"
 #include "SceneLoader.hpp"
+#include "typesSystem/include/typesSystem/EngineStats.hpp"
 
 App::App()
     : isRunning_(true),

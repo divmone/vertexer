@@ -4,8 +4,9 @@
 
 #pragma once
 
-#include "MeshData.hpp"
-#include "Vertex.hpp"
+#include <typesSystem/Vertex.hpp>
+
+#include "../../typesSystem/include/typesSystem/MeshData.hpp"
 
 struct Model {
     std::vector<Vertex> vertices;

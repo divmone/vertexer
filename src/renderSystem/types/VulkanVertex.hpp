@@ -4,9 +4,8 @@
 
 #pragma once
 
+#include <typesSystem/Vertex.hpp>
 #include <vulkan/vulkan_raii.hpp>
-
-#include "Vertex.hpp"
 
 struct VulkanVertex : Vertex {
     static vk::VertexInputBindingDescription getBindingDescription() {
