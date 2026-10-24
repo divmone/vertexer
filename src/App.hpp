@@ -4,12 +4,12 @@
 
 #pragma once
 
-#include "Camera.hpp"
-#include "Scene.hpp"
-#include "VulkanContext.hpp"
-#include "inputSystem/InputSystem.hpp"
-#include "logSystem/Logger.hpp"
-#include "windowSystem/SDLWindow.hpp"
+#include <inputSystem/InputSystem.hpp>
+#include <logSystem/Logger.hpp>
+#include <renderSystem/VulkanContext.hpp>
+#include <sceneSystem/Camera.hpp>
+#include <sceneSystem/Scene.hpp>
+#include <windowSystem/SDLWindow.hpp>
 
 class App {
 public:

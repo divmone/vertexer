@@ -8,11 +8,21 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
 endif ()
 
 function(add_engine_module name)
-    add_library(${name} ${ARGN})
-    target_include_directories(${name}
-            PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
-            PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-    )
+    set(sources ${ARGN})
+    list(FILTER sources INCLUDE REGEX "\\.(c|cc|cpp|cxx)$")
+
+    if (sources)
+        add_library(${name} STATIC ${ARGN})
+        target_include_directories(${name}
+                PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
+                PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+    else ()
+        add_library(${name} INTERFACE)
+        target_sources(${name} INTERFACE ${ARGN})   # optional, keeps headers visible in IDEs
+        target_include_directories(${name} INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+    endif ()
+
+    add_library(engine::${name} ALIAS ${name})  # if you use aliases
 endfunction()
 
 add_subdirectory(app)
