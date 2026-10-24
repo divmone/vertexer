@@ -13,5 +13,5 @@ struct ExtentProvider {
 
 struct IExtentProvider {
     virtual ~IExtentProvider() = default;
-    virtual ExtentProvider GetExtentProvider() const = 0;
+    virtual ExtentProvider GetExtentProvider() = 0;
 };

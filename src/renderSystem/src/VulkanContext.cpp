@@ -1,8 +1,7 @@
-#include <renderSystem/VulkanContext.hpp>
-
 #include <cmath>
 #include <fstream>
 #include <limits>
+#include <renderSystem/VulkanContext.hpp>
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -10,16 +9,13 @@
 #include <chrono>
 #include <glm/gtx/norm.hpp>
 #include <logSystem/Logger.hpp>
-#include <resourceSystem/AssetLoader.hpp>
-#include <sceneSystem/Scene.hpp>
-#include <typesSystem/EngineStats.hpp>
-
-#include <renderSystem/PipelineBuilder.hpp>
-#include <types/VulkanVertex.hpp>
-
 #include <platformSystem/NativeSDLExtensions.hpp>
 #include <platformSystem/NativeVkSurfaceKHR.hpp>
-
+#include <renderSystem/PipelineBuilder.hpp>
+#include <resourceSystem/AssetLoader.hpp>
+#include <sceneSystem/Scene.hpp>
+#include <types/VulkanVertex.hpp>
+#include <typesSystem/EngineStats.hpp>
 
 struct EngineStats;
 
@@ -179,7 +175,8 @@ void VulkanContext::createLogicalDevice() {
 }
 
 void VulkanContext::createSurface() {
-    const VkSurfaceKHR surface = GetNativeVkSurfaceKHR(instance_, nativeWindowHandler_);
+    const VkSurfaceKHR surface =
+        GetNativeVkSurfaceKHR(instance_, nativeWindowHandler_);
     m_surfaceKHR = vk::raii::SurfaceKHR(instance_, surface);
 }
 
@@ -214,7 +211,7 @@ vk::Extent2D VulkanContext::chooseSwapExtent(
     }
 
     std::tie(width_, height_) = extentProvider_.GetExtentSizes();
-
+    LOG_ERROR("std::tie(width_, height_) = extentProvider_.GetExtentSizes();");
     return {
         .width = std::clamp<uint32_t>(width_, capabilities.minImageExtent.width,
                                       capabilities.maxImageExtent.width),
