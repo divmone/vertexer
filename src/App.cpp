@@ -3,14 +3,13 @@
 //
 
 #include <App.hpp>
-
 #include <resourceSystem/SceneLoader.hpp>
 #include <typesSystem/EngineStats.hpp>
 
 App::App()
     : isRunning_(true),
       logger_("APP", true),
-      window_("APP", 1000, 1000),
+      window_("APP", 1000, 1000, true),
       vulkanContext_(window_.GetNativeHandler(), window_.GetExtentProvider()) {
     window_.SetOnEvent([&](SDL_Event& e) {
 

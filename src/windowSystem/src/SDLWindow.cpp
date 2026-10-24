@@ -7,23 +7,32 @@
 #endif
 
 #include <logSystem/Logger.hpp>
-#include <utility>
-
-#include <windowSystem/SDLWindow.hpp>
 #include <platformSystem/NativeWindowHandler.hpp>
+#include <utility>
+#include <windowSystem/SDLWindow.hpp>
 
-SDLWindow::SDLWindow(const char* title, const int width, const int height)
+SDLWindow::SDLWindow(const char* title,
+                     const int width,
+                     const int height,
+                     bool isMaximize)
     : title_(title), width_(width), height_(height) {
     if (!SDL_Init(SDL_INIT_VIDEO)) {
         LOG_ERROR("SDL_Init failed: %s", SDL_GetError());
         throw std::runtime_error("Failed to initialize SDL");
     }
 
-    window_ = SDL_CreateWindow(title_, width_, height_,
-                               SDL_WINDOW_RESIZABLE | SDL_WINDOW_VULKAN);
+    const auto flags = isMaximize ? SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE |
+                                        SDL_WINDOW_MAXIMIZED
+                                  : SDL_WINDOW_RESIZABLE | SDL_WINDOW_VULKAN;
+
+    window_ = SDL_CreateWindow(title_, width_, height_, flags);
+
+    if (isMaximize) {
+        SDL_GetWindowSizeInPixels(window_, &width_, &height_);
+    }
 
     if (!window_) {
-        LOG_ERROR("Failed to create window: %s", SDL_GetError());
+        LOG_ERROR("Failed to create window: {}", SDL_GetError());
         throw std::runtime_error("Failed to create window");
     }
 }
@@ -90,12 +99,16 @@ std::vector<const char*> SDLWindow::GetExtensionNames() const {
     // }
 }
 
-ExtentProvider SDLWindow::GetExtentProvider() const {
+ExtentProvider SDLWindow::GetExtentProvider() {
     ExtentProvider provider;
     provider.GetExtentSizes = [&]() -> std::pair<std::uint32_t, std::uint32_t> {
         int width;
         int height;
         SDL_GetWindowSizeInPixels(window_, &width, &height);
+        if (width != width_ || height != height_) {
+            width_ = width;
+            height_ = height;
+        }
         return {width, height};
     };
 
