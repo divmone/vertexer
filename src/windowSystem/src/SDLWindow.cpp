@@ -10,6 +10,7 @@
 #include <utility>
 
 #include <windowSystem/SDLWindow.hpp>
+#include <platformSystem/NativeWindowHandler.hpp>
 
 SDLWindow::SDLWindow(const char* title, const int width, const int height)
     : title_(title), width_(width), height_(height) {
@@ -67,17 +68,7 @@ int SDLWindow::GetHeight() const {
 }
 
 NativeWindowHandler SDLWindow::GetNativeHandler() const {
-    const SDL_PropertiesID props = SDL_GetWindowProperties(window_);
-#if defined(_WIN64)
-    Win32WindowHandler windowHandler;
-    windowHandler.hWnd = static_cast<HWND>(SDL_GetPointerProperty(
-        props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr));
-    windowHandler.hInstance = static_cast<HINSTANCE>(SDL_GetPointerProperty(
-        props, SDL_PROP_WINDOW_WIN32_INSTANCE_POINTER, nullptr));
-    return windowHandler;
-#endif
-
-    return {};
+    return GetNativeWindowHandler(window_);
 }
 
 std::vector<const char*> SDLWindow::GetExtensionNames() const {
