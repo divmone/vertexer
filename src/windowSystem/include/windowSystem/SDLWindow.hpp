@@ -15,7 +15,10 @@ class SDLWindow : public INativeHandler,
                   public IExtensionNamesReader,
                   public IExtentProvider {
 public:
-    SDLWindow(const char* title, int width, int height);
+    SDLWindow(const char* title,
+              int width,
+              int height,
+              bool isMaximize = false);
     ~SDLWindow();
 
     void SetOnEvent(std::function<void(SDL_Event&)> handler);
@@ -28,7 +31,7 @@ public:
 
     NativeWindowHandler GetNativeHandler() const override;
     [[deprecated]] std::vector<const char*> GetExtensionNames() const override;
-    ExtentProvider GetExtentProvider() const override;
+    ExtentProvider GetExtentProvider() override;
 private:
     SDL_Window* window_;
     std::function<void(SDL_Event&)> onEvent_;
