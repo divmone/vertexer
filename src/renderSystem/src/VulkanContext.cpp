@@ -17,6 +17,10 @@
 #include <renderSystem/PipelineBuilder.hpp>
 #include <types/VulkanVertex.hpp>
 
+#include <platformSystem/NativeSDLExtensions.hpp>
+#include <platformSystem/NativeVkSurfaceKHR.hpp>
+
+
 struct EngineStats;
 
 template <class... Ts>
@@ -85,22 +89,7 @@ void VulkanContext::createInstance() {
                                  std::string(*unsupportedLayerIt));
     }
 
-    auto sdlExtensions = std::visit(
-        overloaded{
-            [&](const Win32WindowHandler&) -> std::vector<const char*> {
-                return {"VK_KHR_surface", "VK_KHR_win32_surface"};
-            },
-            [&](const WaylandWindowHandler&) -> std::vector<const char*> {
-                return {};
-            },
-            [&](const X11WindowHandler&) -> std::vector<const char*> {
-                return {};
-            },
-            [&](const MacOSWindowHandler&) -> std::vector<const char*> {
-                return {};
-            },
-        },
-        nativeWindowHandler_);
+    auto sdlExtensions = GetNativeSDLExtensions(nativeWindowHandler_);
 
     auto extensionProperties = m_context.enumerateInstanceExtensionProperties();
     for (uint32_t i = 0; i < sdlExtensions.size(); ++i) {
@@ -190,27 +179,7 @@ void VulkanContext::createLogicalDevice() {
 }
 
 void VulkanContext::createSurface() {
-    const VkSurfaceKHR surface = std::visit(
-        overloaded{
-            [&](const Win32WindowHandler& h) -> VkSurfaceKHR {
-                VkSurfaceKHR s = VK_NULL_HANDLE;
-#if defined(_WIN64)
-                VkWin32SurfaceCreateInfoKHR ci{
-                    VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR};
-                ci.hinstance = static_cast<HINSTANCE>(h.hInstance);
-                ci.hwnd = static_cast<HWND>(h.hWnd);
-                vkCreateWin32SurfaceKHR(*instance_, &ci, nullptr, &s);
-                return s;
-#endif
-            },
-            [&](const WaylandWindowHandler&) -> VkSurfaceKHR {
-                return nullptr;
-            },
-            [&](const X11WindowHandler&) -> VkSurfaceKHR { return nullptr; },
-            [&](const MacOSWindowHandler&) -> VkSurfaceKHR { return nullptr; },
-        },
-        nativeWindowHandler_);
-
+    const VkSurfaceKHR surface = GetNativeVkSurfaceKHR(instance_, nativeWindowHandler_);
     m_surfaceKHR = vk::raii::SurfaceKHR(instance_, surface);
 }
 
