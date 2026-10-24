@@ -3,8 +3,8 @@
 //
 
 #pragma once
-#include <array>
 #include <SDL3/SDL.h>
+#include <array>
 class InputSystem {
 public:
     void onKeyDown(SDL_Scancode scancode);

@@ -2,11 +2,11 @@
 // Created by divmone on 10/17/2026.
 //
 
-#include "Logger.hpp"
-
 #include <spdlog/async.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
+
+#include <logSystem/Logger.hpp>
 
 Logger::Logger(const std::string& appName, bool isDebug) {
     spdlog::init_thread_pool(8192, 1);

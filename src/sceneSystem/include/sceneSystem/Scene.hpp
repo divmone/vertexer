@@ -5,7 +5,7 @@
 #pragma once
 #include <vector>
 
-#include "types/Object.hpp"
+#include <sceneSystem/types/Object.hpp>
 
 class Scene {
 public:

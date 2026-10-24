@@ -2,18 +2,17 @@
 // Created by divmone on 2/3/2026.
 //
 
-#include "Camera.hpp"
+#include <sceneSystem/Camera.hpp>
 
 #include <glm/ext/matrix_transform.hpp>
 
-const glm::mat4 &Camera::getLookAt() {
+const glm::mat4& Camera::getLookAt() {
     return view;
 }
 
 void Camera::setYaw(float yaw) {
     Camera::yaw = yaw;
 }
-
 
 void Camera::setPitch(float pitch) {
     Camera::pitch = pitch;
@@ -33,7 +32,7 @@ void Camera::updateVectors() {
     up = glm::normalize(glm::cross(right, front));
 }
 
-void Camera::setPosition(const glm::vec3 &pos) {
+void Camera::setPosition(const glm::vec3& pos) {
     position = pos;
 }
 
@@ -41,15 +40,28 @@ void Camera::move(CameraDirections direction, float deltaTime) {
     glm::vec3 wishDir{0.0f};
 
     switch (direction) {
-        case CameraDirections::Forward:  wishDir -= front; break;
-        case CameraDirections::Backward: wishDir += front; break;
-        case CameraDirections::Right:    wishDir += right; break;
-        case CameraDirections::Left:     wishDir -= right; break;
-        case CameraDirections::Up:       wishDir += up;    break;
-        case CameraDirections::Down:     wishDir -= up;    break;
+        case CameraDirections::Forward:
+            wishDir -= front;
+            break;
+        case CameraDirections::Backward:
+            wishDir += front;
+            break;
+        case CameraDirections::Right:
+            wishDir += right;
+            break;
+        case CameraDirections::Left:
+            wishDir -= right;
+            break;
+        case CameraDirections::Up:
+            wishDir += up;
+            break;
+        case CameraDirections::Down:
+            wishDir -= up;
+            break;
     }
 
-    float len = wishDir.x*wishDir.x + wishDir.y*wishDir.y + wishDir.z*wishDir.z;
+    float len =
+        wishDir.x * wishDir.x + wishDir.y * wishDir.y + wishDir.z * wishDir.z;
     if (len > 0.0001f) {
         wishDir = glm::normalize(wishDir);
     }
@@ -65,7 +77,7 @@ void Camera::update(const float deltaTime) {
     updateMatrix();
 }
 
-const glm::vec3 & Camera::getPosition() const {
+const glm::vec3& Camera::getPosition() const {
     return position;
 }
 
@@ -77,6 +89,10 @@ void Camera::rotate(int deltaX, int deltaY) {
     yaw -= (float)deltaX * sensitivity;
     pitch += (float)deltaY * sensitivity;
 
-    if (pitch > 89.0f) pitch = 89.0f;
-    if (pitch < -89.0f) pitch = -89.0f;
+    if (pitch > 89.0f) {
+        pitch = 89.0f;
+    }
+    if (pitch < -89.0f) {
+        pitch = -89.0f;
+    }
 }

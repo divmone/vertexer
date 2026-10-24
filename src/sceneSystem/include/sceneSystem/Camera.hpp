@@ -1,6 +1,6 @@
 #pragma once
 
-#include "glm/glm.hpp"
+#include <glm/glm.hpp>
 
 enum class CameraDirections{
     Up, Down, Right, Left, Forward, Backward

@@ -2,7 +2,7 @@
 // Created by divmone on 7/23/2026.
 //
 
-#include "AssetLoader.hpp"
+#include <resourceSystem/AssetLoader.hpp>
 
 #include <fastgltf/core.hpp>
 #include <fastgltf/glm_element_traits.hpp>
@@ -17,10 +17,9 @@
 
 #include <future>
 #include <iostream>
-
-#include "../typesSystem/include/typesSystem/MeshData.hpp"
-#include "../typesSystem/include/typesSystem/Vertex.hpp"
-#include "Logger.hpp"
+#include <logSystem/Logger.hpp>
+#include <typesSystem/MeshData.hpp>
+#include <typesSystem/Vertex.hpp>
 
 namespace {
 glm::mat4 getNodeLocalMatrix(const fastgltf::Node& node) {

@@ -6,10 +6,10 @@
 #include <windows.h>
 #endif
 
-#include <Logger.hpp>
+#include <logSystem/Logger.hpp>
 #include <utility>
 
-#include "SDLWindow.hpp"
+#include <windowSystem/SDLWindow.hpp>
 
 SDLWindow::SDLWindow(const char* title, const int width, const int height)
     : title_(title), width_(width), height_(height) {

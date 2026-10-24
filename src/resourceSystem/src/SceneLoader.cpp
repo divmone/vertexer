@@ -2,13 +2,11 @@
 // Created by divmone on 9/21/2026.
 //
 
-#include "SceneLoader.hpp"
-
 #include <fstream>
+#include <logSystem/Logger.hpp>
 #include <nlohmann/json.hpp>
-
-#include "Logger.hpp"
-#include "VulkanContext.hpp"
+#include <renderSystem/VulkanContext.hpp>
+#include <resourceSystem/SceneLoader.hpp>
 
 glm::vec3 convertJsonToVec3(nlohmann::json& json) {
     glm::vec3 vec;

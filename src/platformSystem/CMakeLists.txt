@@ -1,7 +1,5 @@
-add_library(platformSystem INTERFACE
-        NativeWindowHandler.hpp
-        IExtensions.hpp
-        IExtentProvider.hpp
+add_engine_module(platformSystem
+        include/platformSystem/NativeWindowHandler.hpp
+        include/platformSystem/IExtensions.hpp
+        include/platformSystem/IExtentProvider.hpp
 )
-
-target_include_directories(platformSystem INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})

@@ -4,9 +4,10 @@
 
 #pragma once
 
+#include <cstdint>
+#include <resourceSystem/types/ImageData.hpp>
+#include <typesSystem/MeshData.hpp>
 #include <typesSystem/Vertex.hpp>
-
-#include "../../typesSystem/include/typesSystem/MeshData.hpp"
 
 struct Model {
     std::vector<Vertex> vertices;

@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <glm/glm.hpp>
+
 struct DrawCall {
     uint32_t textureIndex{0};
     glm::mat4 mat{1.0};

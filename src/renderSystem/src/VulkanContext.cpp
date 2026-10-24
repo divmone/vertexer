@@ -1,4 +1,4 @@
-#include "VulkanContext.hpp"
+#include <renderSystem/VulkanContext.hpp>
 
 #include <cmath>
 #include <fstream>
@@ -7,15 +7,15 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #define GLM_ENABLE_EXPERIMENTAL
-#include <Logger.hpp>
 #include <chrono>
 #include <glm/gtx/norm.hpp>
+#include <logSystem/Logger.hpp>
+#include <resourceSystem/AssetLoader.hpp>
+#include <sceneSystem/Scene.hpp>
+#include <typesSystem/EngineStats.hpp>
 
-#include "../typesSystem/include/typesSystem/EngineStats.hpp"
-#include "AssetLoader.hpp"
-#include "PipelineBuilder.hpp"
-#include "Scene.hpp"
-#include "types/VulkanVertex.hpp"
+#include <renderSystem/PipelineBuilder.hpp>
+#include <types/VulkanVertex.hpp>
 
 struct EngineStats;
 

@@ -7,10 +7,9 @@
 #include <SDL3/SDL.h>
 
 #include <functional>
-
-#include "IExtensions.hpp"
-#include "IExtentProvider.hpp"
-#include "NativeWindowHandler.hpp"
+#include <platformSystem/IExtensions.hpp>
+#include <platformSystem/IExtentProvider.hpp>
+#include <platformSystem/NativeWindowHandler.hpp>
 
 class SDLWindow : public INativeHandler,
                   public IExtensionNamesReader,
