@@ -2,10 +2,10 @@
 // Created by divmone on 10/16/2026.
 //
 
-#include "App.hpp"
+#include <App.hpp>
 
-#include "EngineStats.hpp"
-#include "SceneLoader.hpp"
+#include <resourceSystem/SceneLoader.hpp>
+#include <typesSystem/EngineStats.hpp>
 
 App::App()
     : isRunning_(true),

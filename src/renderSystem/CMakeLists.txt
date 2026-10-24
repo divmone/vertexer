@@ -6,18 +6,17 @@ find_package(glm REQUIRED)
 #find_package(nlohmann_json REQUIRED)
 #find_package(spdlog REQUIRED)
 
-add_library(
-        renderSystem STATIC
-        VulkanContext.hpp VulkanContext.cpp
-        PipelineBuilder.hpp PipelineBuilder.cpp
-        PSO.hpp PSO.cpp
-        types/Providers.hpp
-        types/VulkanVertex.hpp
-        types/DrawCall.hpp
-        types/VulkanModel.hpp
-        types/VulkanTexture.hpp
+add_engine_module(
+        renderSystem
+        include/renderSystem/VulkanContext.hpp src/VulkanContext.cpp
+        include/renderSystem/PipelineBuilder.hpp src/PipelineBuilder.cpp
+        include/renderSystem/PSO.hpp src/PSO.cpp
+        include/renderSystem/types/Providers.hpp
+        src/types/VulkanVertex.hpp
+        include/renderSystem/types/DrawCall.hpp
+        include/renderSystem/types/VulkanModel.hpp
+        include/renderSystem/types/VulkanTexture.hpp
 )
 
 target_link_libraries(renderSystem logSystem sceneSystem resourceSystem platformSystem typesSystem Vulkan::Vulkan glm)
-target_include_directories(renderSystem PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_definitions(renderSystem PUBLIC VULKAN_HPP_NO_STRUCT_CONSTRUCTORS)

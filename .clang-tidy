@@ -6,6 +6,7 @@ Checks: >
   performance-*,
   readability-identifier-naming,
   -modernize-use-trailing-return-type
+  -modernize-use-nodiscard
 
 CheckOptions:
   # Классы и структуры: MyClass
