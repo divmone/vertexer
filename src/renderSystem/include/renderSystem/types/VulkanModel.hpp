@@ -4,10 +4,10 @@
 
 #pragma once
 
+#include <typesSystem/MeshData.hpp>
 #include <vulkan/vulkan_raii.hpp>
 
-#include "../../typesSystem/include/typesSystem/MeshData.hpp"
-#include "VulkanTexture.hpp"
+#include <renderSystem/types/VulkanTexture.hpp>
 
 struct VkModel {
     uint32_t indicesCount = 0;

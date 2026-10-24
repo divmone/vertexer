@@ -8,8 +8,8 @@
 #include <string>
 #include <vector>
 
-#include "types/ImageData.hpp"
-#include "types/Model.hpp"
+#include <resourceSystem/types/ImageData.hpp>
+#include <resourceSystem/types/Model.hpp>
 
 class AssetLoader {
 public:

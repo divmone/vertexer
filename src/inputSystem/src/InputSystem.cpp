@@ -2,7 +2,7 @@
 // Created by divmone on 8/2/2026.
 //
 
-#include "InputSystem.hpp"
+#include <inputSystem/InputSystem.hpp>
 
 void InputSystem::onKeyDown(SDL_Scancode scancode) {
     currentKeys_[scancode] = true;

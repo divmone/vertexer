@@ -6,15 +6,14 @@
 #define VK_USE_PLATFORM_WIN32_KHR
 #define WIN32_LEAN_AND_MEAN
 #endif
+#include <platformSystem/IExtentProvider.hpp>
+#include <platformSystem/NativeWindowHandler.hpp>
+#include <resourceSystem/types/Model.hpp>
 #include <vulkan/vulkan_raii.hpp>
 
-#include "IExtentProvider.hpp"
-#include "NativeWindowHandler.hpp"
-#include "PSO.hpp"
-#include "types/DrawCall.hpp"
-#include "types/Model.hpp"
-#include "types/Providers.hpp"
-#include "types/VulkanModel.hpp"
+#include <renderSystem/PSO.hpp>
+#include <renderSystem/types/DrawCall.hpp>
+#include <renderSystem/types/VulkanModel.hpp>
 
 struct EngineStats;
 class Scene;

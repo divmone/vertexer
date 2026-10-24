@@ -4,9 +4,8 @@
 
 #pragma once
 
+#include <sceneSystem/Scene.hpp>
 #include <string>
-
-#include "Scene.hpp"
 
 class VulkanContext;
 

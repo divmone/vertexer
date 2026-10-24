@@ -13,7 +13,9 @@ function(add_engine_module name)
 
     if (sources)
         add_library(${name} STATIC ${ARGN})
-        target_include_directories(${name} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+        target_include_directories(${name}
+                PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
+                PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
     else ()
         add_library(${name} INTERFACE)
         target_sources(${name} INTERFACE ${ARGN})   # optional, keeps headers visible in IDEs

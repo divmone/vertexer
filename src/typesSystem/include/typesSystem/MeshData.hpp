@@ -8,7 +8,6 @@
 
 #include <cstdint>
 #include <glm/glm.hpp>
-#include <types/ImageData.hpp>
 #include <vector>
 
 struct Primitive {
