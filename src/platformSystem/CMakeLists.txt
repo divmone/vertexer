@@ -2,7 +2,7 @@
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(WAYLAND_CLIENT QUIET wayland-client)
 find_package(X11 QUIET)
-
+find_package(Vulkan REQUIRED)
 
 add_engine_module(platformSystem
         include/platformSystem/NativeWindowHandler.hpp
@@ -15,15 +15,14 @@ add_engine_module(platformSystem
         src/NativeWindowHandler.cpp
 )
 
+target_link_libraries(platformSystem PUBLIC SDL3::SDL3 Vulkan::Vulkan)
 
-target_link_libraries(platformSystem PUBLIC SDL3::SDL3)
-
-if(WAYLAND_CLIENT_FOUND)
+if (WAYLAND_CLIENT_FOUND)
     target_include_directories(platformSystem PRIVATE ${WAYLAND_CLIENT_INCLUDE_DIRS})
     target_link_libraries(platformSystem PRIVATE ${WAYLAND_CLIENT_LINK_LIBRARIES})
-endif()
+endif ()
 
 if (X11_FOUND)
     target_include_directories(platformSystem PRIVATE ${X11_INCLUDE_DIR})
     target_link_libraries(platformSystem PRIVATE ${X11_LIBRARIES})
-endif()
+endif ()
