@@ -27,9 +27,12 @@ SDLWindow::SDLWindow(const char* title,
 
     window_ = SDL_CreateWindow(title_, width_, height_, flags);
 
+    SDL_SyncWindow(window_);
+
     if (isMaximize) {
         SDL_GetWindowSizeInPixels(window_, &width_, &height_);
     }
+
 
     if (!window_) {
         LOG_ERROR("Failed to create window: {}", SDL_GetError());
