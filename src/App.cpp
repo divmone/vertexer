@@ -12,7 +12,25 @@ App::App()
       window_("APP", 1000, 1000, true),
       vulkanContext_(window_.GetNativeHandler(), window_.GetExtentProvider()) {
     window_.SetOnEvent([&](SDL_Event& e) {
-
+        if (e.type == SDL_EVENT_MOUSE_MOTION) {
+            // if (mouseMode) {
+            //     camera_.rotate(-e.motion.xrel, -e.motion.yrel);
+            // }
+        }
+        if (e.type == SDL_EVENT_KEY_DOWN) {
+            inputSystem_.onKeyDown(e.key.scancode);
+        }
+        if (e.type == SDL_EVENT_KEY_UP) {
+            inputSystem_.onKeyUp(e.key.scancode);
+        }
+        if (e.type == SDL_EVENT_WINDOW_MINIMIZED) {
+            vulkanContext_.recreateContext();
+            return;
+        }
+        if (e.type == SDL_EVENT_WINDOW_RESIZED ||
+            e.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED) {
+            vulkanContext_.recreateContext();
+        }
     });
     init();
 }
