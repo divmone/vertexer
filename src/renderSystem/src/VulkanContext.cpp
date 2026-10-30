@@ -51,7 +51,6 @@ void VulkanContext::initVulkan() {
     createBlendingPipeline();
     createCommandPool();
     createUniformBuffers();
-
     createCommandBuffer();
     createSyncObjects();
 }
@@ -1354,6 +1353,7 @@ void VulkanContext::recreateContext() {
     do {
         auto surfaceCapabilities =
             m_physicalDevice.getSurfaceCapabilitiesKHR(*m_surfaceKHR);
+
         extent = chooseSwapExtent(surfaceCapabilities);
 
         if (extent.width == 0 || extent.height == 0) {
