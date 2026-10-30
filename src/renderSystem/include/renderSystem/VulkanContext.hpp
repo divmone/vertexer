@@ -8,12 +8,11 @@
 #endif
 #include <platformSystem/IExtentProvider.hpp>
 #include <platformSystem/NativeWindowHandler.hpp>
-#include <resourceSystem/types/Model.hpp>
-#include <vulkan/vulkan_raii.hpp>
-
 #include <renderSystem/PSO.hpp>
 #include <renderSystem/types/DrawCall.hpp>
 #include <renderSystem/types/VulkanModel.hpp>
+#include <resourceSystem/types/Model.hpp>
+#include <vulkan/vulkan_raii.hpp>
 
 struct EngineStats;
 class Scene;

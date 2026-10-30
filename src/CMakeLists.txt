@@ -10,7 +10,8 @@ add_subdirectory(resourceSystem)
 add_subdirectory(platformSystem)
 add_subdirectory(inputSystem)
 add_subdirectory(typesSystem)
+add_subdirectory(uiSystem)
 
-target_link_libraries(src windowSystem logSystem renderSystem sceneSystem inputSystem resourceSystem typesSystem)
+target_link_libraries(src windowSystem logSystem renderSystem sceneSystem inputSystem resourceSystem typesSystem uiSystem)
 
 target_include_directories(src PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
