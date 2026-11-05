@@ -12,5 +12,5 @@
 #endif
 
 #if defined(__APPLE__)
-// ченибудь придумаем
+#define VK_USE_PLATFORM_MACOSX_KHR
 #endif

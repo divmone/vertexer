@@ -5,6 +5,7 @@
 #include <App.hpp>
 #include <resourceSystem/SceneLoader.hpp>
 #include <typesSystem/EngineStats.hpp>
+#include<chrono>
 
 App::App()
     : isRunning_(true),
@@ -57,7 +58,7 @@ void App::Run() {
 
         vulkanContext_.drawScene(scene_, stats);
 
-        auto end = std::chrono::system_clock::now();
+        auto end = std::chrono::high_resolution_clock::now();
 
         auto elapsed =
             std::chrono::duration_cast<std::chrono::microseconds>(end - now);
