@@ -38,9 +38,19 @@ SDLWindow::SDLWindow(const char* title,
         LOG_ERROR("Failed to create window: {}", SDL_GetError());
         throw std::runtime_error("Failed to create window");
     }
+
+#if defined(__APPLE__)
+    metalView_ = SDL_Metal_CreateView(window_);
+#endif
+
 }
 
 SDLWindow::~SDLWindow() {
+
+#if defined(__APPLE__)
+    SDL_Metal_DestroyView(metalView_);
+#endif
+
     if (window_) {
         SDL_DestroyWindow(window_);
         window_ = nullptr;
@@ -80,6 +90,10 @@ int SDLWindow::GetHeight() const {
 }
 
 NativeWindowHandler SDLWindow::GetNativeHandler() const {
+#if defined(__APPLE__)
+    return GetNativeWindowHandler(window_, metalView_);
+#     endif
+
     return GetNativeWindowHandler(window_);
 }
 

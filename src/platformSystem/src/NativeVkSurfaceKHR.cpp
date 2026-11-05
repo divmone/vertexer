@@ -76,9 +76,18 @@ VkSurfaceKHR CreateX11Surface(const vk::raii::Instance& instance,
 #endif
 
 #if defined(__APPLE__)
-VkSurfaceKHR CreateMacOSSurface(const vk::raii::Instance&,
-                                const MacOSWindowHandler&) {
-    throw std::runtime_error("macOS surface creation is not implemented");
+VkSurfaceKHR CreateMacOSSurface(const vk::raii::Instance& instance,
+                                const MacOSWindowHandler& handler) {
+    VkMetalSurfaceCreateInfoEXT ci{};
+    ci.sType     = VK_STRUCTURE_TYPE_METAL_SURFACE_CREATE_INFO_EXT;
+    ci.pLayer = handler.layer;
+
+    VkSurfaceKHR s = VK_NULL_HANDLE;
+    if (vkCreateMetalSurfaceEXT(*instance, &ci, nullptr, &s) != VK_SUCCESS) {
+        throw std::runtime_error("vkCreateMetalSurfaceKHR failed");
+    }
+
+    return s;
 }
 #endif
 

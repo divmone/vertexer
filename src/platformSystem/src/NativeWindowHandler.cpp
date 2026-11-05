@@ -36,7 +36,20 @@ NativeWindowHandler GetNativeWindowHandler(SDL_Window* window) {
 #endif
 
 #if defined(__APPLE__)
+    MacOSWindowHandler macOS;
+    macOS.layer = SDL_Metal_GetLayer(window);
+    return macOS;
 #endif
 
     return std::monostate{};
 }
+
+
+#if defined(__APPLE__)
+NativeWindowHandler GetNativeWindowHandler(SDL_Window* window, SDL_MetalView view) {
+    MacOSWindowHandler macOS;
+    macOS.layer = SDL_Metal_GetLayer(view);
+    return macOS;
+}
+
+#endif
