@@ -27,7 +27,6 @@ inline std::vector<const char*> GetNativeSDLExtensions(const NativeWindowHandler
 #endif
 #if defined(__APPLE__)
             else if constexpr (std::is_same_v<T, MacOSWindowHandler>) {
-                // мб оно а мб и нет
                 return {"VK_KHR_surface", "VK_EXT_metal_surface"};
             }
 #endif

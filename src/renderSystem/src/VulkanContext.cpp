@@ -115,14 +115,20 @@ void VulkanContext::selectPhysicalDevice() {
         throw std::runtime_error("Cannot find GPU");
     }
 
+    if (m_physicalDevice == nullptr) {
+        LOG_INFO("physical device is null");
+    }
     for (auto& physicalDevice : physicalDevices) {
         auto features = physicalDevice.getFeatures();
         auto properties = physicalDevice.getProperties();
-        if ((properties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu ||
-             properties.deviceType == vk::PhysicalDeviceType::eIntegratedGpu) &&
-            features.geometryShader) {
+        if (properties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu ||
+             properties.deviceType == vk::PhysicalDeviceType::eIntegratedGpu) {
             m_physicalDevice = physicalDevice;
         }
+    }
+
+    if (m_physicalDevice == nullptr) {
+        throw std::runtime_error("Physical device is null");
     }
 
     LOG_INFO("Selected physical device is: {}",

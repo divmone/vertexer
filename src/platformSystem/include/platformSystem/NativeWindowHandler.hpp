@@ -27,7 +27,7 @@ struct Win32WindowHandler {
 #if defined(__APPLE__)
 struct MacOSWindowHandler {
     void* nsWindow      = nullptr;
-    void* nsApplication = nullptr;
+    void* layer = nullptr;
 };
 #endif
 
@@ -47,6 +47,9 @@ using NativeWindowHandler = std::variant<
 
 NativeWindowHandler GetNativeWindowHandler(SDL_Window* window);
 
+#if defined(__APPLE__)
+NativeWindowHandler GetNativeWindowHandler(SDL_Window* window, SDL_MetalView view);
+#endif
 struct INativeHandler {
     virtual ~INativeHandler() = default;
     virtual NativeWindowHandler GetNativeHandler() const = 0;

@@ -38,4 +38,9 @@ private:
     const char* title_;
     int width_;
     int height_;
+
+
+#if defined(__APPLE__)
+    SDL_MetalView metalView_;
+#endif
 };
