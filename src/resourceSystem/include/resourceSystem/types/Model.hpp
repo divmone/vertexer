@@ -7,10 +7,10 @@
 #include <cstdint>
 #include <resourceSystem/types/ImageData.hpp>
 #include <typesSystem/MeshData.hpp>
-#include <typesSystem/Vertex.hpp>
+#include <typesSystem/Vertex3d.hpp>
 
 struct Model {
-    std::vector<Vertex> vertices;
+    std::vector<Vertex3d> vertices;
     std::vector<uint32_t> indices;
     std::vector<Mesh> meshes;
     std::vector<Node> nodes;
