@@ -19,7 +19,13 @@ class Scene;
 
 constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 
-struct PushConstantObject {
+struct PushConstantObject3d {
+    alignas(16) glm::mat4 model;
+    alignas(16) glm::vec4 color;
+    alignas(16) uint32_t hasTexture;
+};
+
+struct PushConstantObject2d {
     alignas(16) glm::mat4 model;
     alignas(16) glm::vec4 color;
     alignas(16) uint32_t hasTexture;
@@ -62,9 +68,13 @@ private:
     void createSurface();
     void createSwapchain();
     void createImageViews();
+
     void createDescriptorSetLayout();
+    void createDescriptorSetLayout2d();
 
     void createGraphicsPipeline();
+    void Create2dGraphicsPipeline();
+
     void createBlendingPipeline();
 
     void createCommandPool();
@@ -107,7 +117,7 @@ private:
     vk::raii::Context m_context;
     vk::raii::Instance instance_{nullptr};
     vk::raii::PhysicalDevice m_physicalDevice{nullptr};
-    vk::raii::Device m_device{nullptr};
+    vk::raii::Device device_{nullptr};
     vk::raii::Queue m_graphicsQueue{nullptr};
 
     vk::raii::SurfaceKHR m_surfaceKHR{nullptr};
@@ -121,11 +131,16 @@ private:
 
     vk::raii::DescriptorSetLayout descriptorSetLayout{nullptr};
     vk::raii::DescriptorSetLayout blendingDescriptorSetLayout{nullptr};
+    vk::raii::DescriptorSetLayout descriptorSetLayout2d{nullptr};
+
 
     std::unique_ptr<PSO> graphicsPSO_;
 
-    vk::raii::PipelineLayout m_pipelineLayout{nullptr};
     vk::raii::Pipeline m_graphicsPipeline{nullptr};
+    vk::raii::PipelineLayout m_pipelineLayout{nullptr};
+
+    vk::raii::Pipeline graphicsPipeline2d_{nullptr};
+    vk::raii::PipelineLayout pipelineLayout2d_{nullptr};
 
     vk::raii::Pipeline blendingPipeline{nullptr};
 

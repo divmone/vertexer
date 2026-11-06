@@ -12,7 +12,7 @@ add_engine_module(
         include/renderSystem/PipelineBuilder.hpp src/PipelineBuilder.cpp
         include/renderSystem/PSO.hpp src/PSO.cpp
         include/renderSystem/types/Providers.hpp
-        src/types/VulkanVertex.hpp
+        src/types/VulkanVertex3d.hpp
         include/renderSystem/types/DrawCall.hpp
         include/renderSystem/types/VulkanModel.hpp
         include/renderSystem/types/VulkanTexture.hpp
