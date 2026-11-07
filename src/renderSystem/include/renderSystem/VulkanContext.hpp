@@ -73,7 +73,7 @@ private:
     void createDescriptorSetLayout2d();
 
     void createGraphicsPipeline();
-    void Create2dGraphicsPipeline();
+    void CreateGraphicsPipeline2d();
 
     void createBlendingPipeline();
 

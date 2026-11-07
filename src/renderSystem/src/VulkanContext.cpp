@@ -17,6 +17,8 @@
 #include <types/VulkanVertex3d.hpp>
 #include <typesSystem/EngineStats.hpp>
 
+#include "DescriptorSetLayoutBuilder.hpp"
+
 struct EngineStats;
 
 template <class... Ts>
@@ -48,6 +50,7 @@ void VulkanContext::initVulkan() {
     createBlendDescriptorSetLayout();
     createDepthResources();
     createGraphicsPipeline();
+    CreateGraphicsPipeline2d();
     createBlendingPipeline();
     createCommandPool();
     createUniformBuffers();
@@ -331,7 +334,7 @@ void VulkanContext::createGraphicsPipeline() {
                            .build(device_);
 }
 
-void VulkanContext::Create2dGraphicsPipeline() {
+void VulkanContext::CreateGraphicsPipeline2d() {
     auto shaderModule =
         createShaderModule(loadShader("../../../shaders/2dshader.spv"));
 
@@ -736,24 +739,20 @@ void VulkanContext::createSyncObjects() {
 }
 
 void VulkanContext::createDescriptorSetLayout() {
-    vk::DescriptorSetLayoutBinding binding{
+    DescriptorSetLayoutBuilder builder;
+    builder.Add({
         .binding = 0,
         .descriptorType = vk::DescriptorType::eUniformBuffer,
         .descriptorCount = 1,
-        .stageFlags = vk::ShaderStageFlagBits::eAllGraphics};
-
-    vk::DescriptorSetLayoutBinding samplerBinding{
+        .stageFlags = vk::ShaderStageFlagBits::eAllGraphics});
+    builder.Add({
         .binding = 1,
         .descriptorType = vk::DescriptorType::eCombinedImageSampler,
         .descriptorCount = 1,
-        .stageFlags = vk::ShaderStageFlagBits::eFragment};
+        .stageFlags = vk::ShaderStageFlagBits::eFragment});
 
-    std::array bindings{binding, samplerBinding};
 
-    vk::DescriptorSetLayoutCreateInfo createInfo{
-        .bindingCount = bindings.size(), .pBindings = bindings.data()};
-
-    descriptorSetLayout = vk::raii::DescriptorSetLayout(device_, createInfo);
+    descriptorSetLayout = builder.Build(device_);
     // graphicsPSO_ = std::make_unique<PSO>(m_device, MAX_FRAMES_IN_FLIGHT);
 }
 

@@ -16,6 +16,8 @@ add_engine_module(
         include/renderSystem/types/DrawCall.hpp
         include/renderSystem/types/VulkanModel.hpp
         include/renderSystem/types/VulkanTexture.hpp
+        src/DescriptorSetLayoutBuilder.hpp
+        src/DescriptorSetLayoutBuilder.cpp
 )
 
 target_link_libraries(renderSystem logSystem sceneSystem resourceSystem platformSystem typesSystem Vulkan::Vulkan glm)
