@@ -47,6 +47,7 @@ void VulkanContext::initVulkan() {
     createSwapchain();
     createImageViews();
     createDescriptorSetLayout();
+    createDescriptorSetLayout2d();
     createBlendDescriptorSetLayout();
     createDepthResources();
     createGraphicsPipeline();
@@ -740,23 +741,32 @@ void VulkanContext::createSyncObjects() {
 
 void VulkanContext::createDescriptorSetLayout() {
     DescriptorSetLayoutBuilder builder;
-    builder.Add({
-        .binding = 0,
-        .descriptorType = vk::DescriptorType::eUniformBuffer,
-        .descriptorCount = 1,
-        .stageFlags = vk::ShaderStageFlagBits::eAllGraphics});
-    builder.Add({
-        .binding = 1,
-        .descriptorType = vk::DescriptorType::eCombinedImageSampler,
-        .descriptorCount = 1,
-        .stageFlags = vk::ShaderStageFlagBits::eFragment});
-
+    builder.Add({.binding = 0,
+                 .descriptorType = vk::DescriptorType::eUniformBuffer,
+                 .descriptorCount = 1,
+                 .stageFlags = vk::ShaderStageFlagBits::eAllGraphics});
+    builder.Add({.binding = 1,
+                 .descriptorType = vk::DescriptorType::eCombinedImageSampler,
+                 .descriptorCount = 1,
+                 .stageFlags = vk::ShaderStageFlagBits::eFragment});
 
     descriptorSetLayout = builder.Build(device_);
     // graphicsPSO_ = std::make_unique<PSO>(m_device, MAX_FRAMES_IN_FLIGHT);
 }
 
-void VulkanContext::createDescriptorSetLayout2d() {}
+void VulkanContext::createDescriptorSetLayout2d() {
+    DescriptorSetLayoutBuilder builder;
+    builder.Add({.binding = 0,
+                 .descriptorType = vk::DescriptorType::eUniformBuffer,
+                 .descriptorCount = 1,
+                 .stageFlags = vk::ShaderStageFlagBits::eAllGraphics});
+    builder.Add({.binding = 1,
+                 .descriptorType = vk::DescriptorType::eCombinedImageSampler,
+                 .descriptorCount = 1,
+                 .stageFlags = vk::ShaderStageFlagBits::eFragment});
+
+    descriptorSetLayout2d_ = builder.Build(device_);
+}
 
 void VulkanContext::createUniformBuffers() {
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
@@ -974,19 +984,15 @@ uint32_t VulkanContext::findMemoryType(uint32_t typeFilter,
 }
 
 void VulkanContext::createBlendDescriptorSetLayout() {
-    vk::DescriptorSetLayoutBinding binding{
-        .binding = 0,
-        .descriptorType = vk::DescriptorType::eCombinedImageSampler,
-        .descriptorCount = 1,
-        .stageFlags = vk::ShaderStageFlagBits::eFragment};
-
-    vk::DescriptorSetLayoutCreateInfo createInfo{
-        .bindingCount = 1,
-        .pBindings = &binding,
-    };
+    DescriptorSetLayoutBuilder builder;
 
     blendingDescriptorSetLayout =
-        vk::raii::DescriptorSetLayout(device_, createInfo);
+        builder
+            .Add({.binding = 0,
+                  .descriptorType = vk::DescriptorType::eCombinedImageSampler,
+                  .descriptorCount = 1,
+                  .stageFlags = vk::ShaderStageFlagBits::eFragment})
+            .Build(device_);
 }
 
 void VulkanContext::createBlendDescriptorSet() {
