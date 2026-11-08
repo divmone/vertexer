@@ -131,8 +131,7 @@ private:
 
     vk::raii::DescriptorSetLayout descriptorSetLayout{nullptr};
     vk::raii::DescriptorSetLayout blendingDescriptorSetLayout{nullptr};
-    vk::raii::DescriptorSetLayout descriptorSetLayout2d{nullptr};
-
+    vk::raii::DescriptorSetLayout descriptorSetLayout2d_{nullptr};
 
     std::unique_ptr<PSO> graphicsPSO_;
 
