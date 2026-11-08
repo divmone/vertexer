@@ -15,6 +15,6 @@ struct Vertex3d {
 
 struct Vertex2d {
     glm::vec2 pos;
-    glm::vec3 color{1.0, 0.0, 0.0};
-    glm::vec2 texCoord{0.0, 0.0};
+    glm::vec4 color;
+    glm::vec2 texCoord;
 };

@@ -13,8 +13,28 @@ vk::raii::DescriptorSetLayout DescriptorSetLayoutBuilder::Build(
     return {device, createInfo};
 }
 
+vk::raii::DescriptorSetLayout DescriptorSetLayoutBuilder::BuildBindLess(
+    const vk::raii::Device& device) {
+    auto flags = vk::DescriptorBindingFlagBits::ePartiallyBound |
+                 vk::DescriptorBindingFlagBits::eVariableDescriptorCount |
+                 vk::DescriptorBindingFlagBitsEXT::eUpdateAfterBind;
+
+    vk::DescriptorSetLayoutBindingFlagsCreateInfoEXT extendedInfo{
+        .bindingCount = 1,
+        .pBindingFlags = &flags,
+    };
+
+    vk::DescriptorSetLayoutCreateInfo createInfo = {
+        .pNext = &extendedInfo,
+        .flags = vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPoolEXT,
+        .bindingCount = static_cast<uint32_t>(bindings_.size()),
+        .pBindings = bindings_.data()};
+
+    return {device, createInfo};
+}
+
 DescriptorSetLayoutBuilder& DescriptorSetLayoutBuilder::Add(
-    vk::DescriptorSetLayoutBinding binding) {
+    const vk::DescriptorSetLayoutBinding& binding) {
     bindings_.push_back(binding);
     return *this;
 }

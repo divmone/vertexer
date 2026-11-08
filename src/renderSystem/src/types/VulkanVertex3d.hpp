@@ -43,36 +43,3 @@ struct VulkanVertex3d : Vertex3d {
         return *this;
     }
 };
-
-struct VulkanVertex2d : Vertex2d {
-    static vk::VertexInputBindingDescription getBindingDescription() {
-        return {.binding = 0,
-                .stride = sizeof(Vertex2d),
-                .inputRate = vk::VertexInputRate::eVertex};
-    }
-
-    static std::array<vk::VertexInputAttributeDescription, 3>
-    getAttributeDescriptions() {
-        return {{{.location = 0,
-                  .binding = 0,
-                  .format = vk::Format::eR32G32Sfloat,
-                  .offset = offsetof(Vertex2d, pos)},
-                 {.location = 1,
-                  .binding = 0,
-                  .format = vk::Format::eR32G32B32Sfloat,
-                  .offset = offsetof(Vertex3d, color)},
-                 {.location = 2,
-                  .binding = 0,
-                  .format = vk::Format::eR32G32Sfloat,
-                  .offset = offsetof(Vertex3d, texCoord)}}};
-    }
-
-    VulkanVertex2d& operator=(const glm::vec2& position) {
-        if (&this->pos == &position) {
-            return *this;
-        }
-
-        pos = position;
-        return *this;
-    }
-};

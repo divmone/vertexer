@@ -26,7 +26,6 @@ struct PushConstantObject3d {
 };
 
 struct PushConstantObject2d {
-    alignas(16) glm::mat4 model;
     alignas(16) glm::vec4 color;
     alignas(16) uint32_t hasTexture;
 };
@@ -92,9 +91,6 @@ private:
     void createSyncObjects();
     void createUniformBuffers();
     void updateUniformBuffer(uint32_t index);
-    void createDescriptorPool();
-    void initImGui();
-    void createImGuiDescriptorPool();
 
     void createDescriptorSets();
     void createDepthResources();
@@ -129,13 +125,11 @@ private:
     vk::Extent2D m_swapChainExtent;
     std::vector<vk::raii::ImageView> m_swapChainImageViews;
 
-    vk::raii::DescriptorSetLayout descriptorSetLayout{nullptr};
-    vk::raii::DescriptorSetLayout blendingDescriptorSetLayout{nullptr};
+    vk::raii::DescriptorSetLayout descriptorSetLayout3d_{nullptr};
+    vk::raii::DescriptorSetLayout blendingDescriptorSetLayout_{nullptr};
     vk::raii::DescriptorSetLayout descriptorSetLayout2d_{nullptr};
 
-    std::unique_ptr<PSO> graphicsPSO_;
-
-    vk::raii::Pipeline m_graphicsPipeline{nullptr};
+    vk::raii::Pipeline graphicsPipeline_{nullptr};
     vk::raii::PipelineLayout m_pipelineLayout{nullptr};
 
     vk::raii::Pipeline graphicsPipeline2d_{nullptr};
@@ -157,7 +151,12 @@ private:
     std::vector<vk::raii::Buffer> uniformBuffers;
     std::vector<vk::raii::DeviceMemory> uniformDevicesMemory;
     std::vector<void*> uniformBuffersMapped;
-    vk::raii::DescriptorPool descriptorPool{nullptr};
+
+    vk::raii::DescriptorPool generalDescriptorPool_{nullptr};
+    vk::raii::DescriptorPool bindlessDescriptorPool_{nullptr};
+    void createDescriptorPool();
+    void createBindlessDescriptorPool();
+
     vk::raii::DescriptorPool imguiDescriptorPool{nullptr};
 
     std::vector<vk::raii::DescriptorSet> descriptorSets;
@@ -170,7 +169,7 @@ private:
     std::vector<Texture> textures_;
     std::vector<vk::raii::DescriptorSet> blendDescriptorSets;
     void createBlendDescriptorSetLayout();
-    void createBlendDescriptorSet();
+    void createTextureDescriptorSet();
 
     uint32_t textureCounter{0};
     void createTexture();
@@ -234,7 +233,7 @@ private:
         vk::raii::CommandBuffer& commandBuffer,
         std::vector<vk::raii::Buffer>& stagingBuffersKeepAlive,
         std::vector<vk::raii::DeviceMemory>& stagingMemoriesKeepAlive,
-        const std::vector<T>& arr,
+        const std::span<const T>& arr,
         vk::BufferUsageFlagBits flag) {
         vk::DeviceSize bufferSize = arr.size() * sizeof(arr[0]);
         auto [stagingBuffer, stagingDeviceMemory] =
@@ -272,4 +271,17 @@ private:
 
     std::vector<DrawCall> drawCalls;
     std::vector<DrawCall> blendDrawCalls;
+
+    VkModel createSample2d();
+
+    VkModel model2d;
+
+    void createDescriptorSet2d();
+    std::vector<vk::raii::DescriptorSet> descriptorSets2d_;
+
+    vk::raii::DescriptorSetLayout bindlessDescriptorSetLayout_{nullptr};
+    vk::raii::DescriptorSet bindlessDescriptorSet_{nullptr};
+
+    void createBindlessDescriptorSetLayout();
+    void createBindlessDescriptorSet();
 };
