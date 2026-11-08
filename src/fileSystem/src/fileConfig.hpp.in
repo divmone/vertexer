@@ -1,0 +1,4 @@
+#pragma once
+
+inline const char* PROJECT_ROOT_DIR = "@PROJECT_SOURCE_DIR@/";
+inline const char* PROJECT_BIN_DIR  = "@PROJECT_BINARY_DIR@/";
