@@ -21,6 +21,7 @@ add_engine_module(
         src/DescriptorSetLayoutBuilder.cpp
         src/DescriptorPool.hpp
         src/DescriptorPool.cpp
+        src/types/VulkanSprite.hpp
 )
 
 target_link_libraries(renderSystem fileSystem logSystem sceneSystem resourceSystem platformSystem typesSystem Vulkan::Vulkan glm)
