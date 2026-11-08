@@ -2,9 +2,9 @@
 // Created by divmone on 9/24/2026.
 //
 
-#include <renderSystem/PipelineBuilder.hpp>
+#include <PipelineBuilder.hpp>
 
-PipelineBuilder& PipelineBuilder::layout(
+PipelineBuilder& PipelineBuilder::Layout(
     const vk::PipelineLayout& pipelineLayout) {
     layout_ = pipelineLayout;
     return *this;
@@ -65,6 +65,16 @@ PipelineBuilder& PipelineBuilder::depthTestOff() {
     return *this;
 }
 
+PipelineBuilder& PipelineBuilder::frontFace(vk::FrontFace f) {
+    frontFace_ = f;
+    return *this;
+}
+
+PipelineBuilder& PipelineBuilder::cullMode(vk::CullModeFlags f) {
+    cullMode_ |= f;
+    return *this;
+}
+
 PipelineBuilder& PipelineBuilder::shaders(const vk::ShaderModule& shaderModule,
                                           const char* vertName,
                                           const char* fragName) {
@@ -96,8 +106,8 @@ vk::raii::Pipeline PipelineBuilder::build(const vk::raii::Device& device) {
         .depthClampEnable = vk::False,
         .rasterizerDiscardEnable = vk::False,
         .polygonMode = vk::PolygonMode::eFill,
-        .cullMode = vk::CullModeFlagBits::eBack,
-        .frontFace = vk::FrontFace::eCounterClockwise,
+        .cullMode = cullMode_,
+        .frontFace = frontFace_,
         .depthBiasEnable = vk::True,
         .lineWidth = 1.0f};
 

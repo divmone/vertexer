@@ -3,9 +3,9 @@
 //
 
 #include <App.hpp>
+#include <chrono>
 #include <resourceSystem/SceneLoader.hpp>
 #include <typesSystem/EngineStats.hpp>
-#include<chrono>
 
 App::App()
     : isRunning_(true),
