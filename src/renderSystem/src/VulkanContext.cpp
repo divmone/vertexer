@@ -732,25 +732,6 @@ void VulkanContext::recordCommandBuffer(uint32_t index,
 
     commandBuffer.endRendering();
 
-    vk::RenderingAttachmentInfo imguiColorAttachmentInfo = {
-        .imageView = m_swapChainImageViews[index],
-        .imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
-        .loadOp = vk::AttachmentLoadOp::eLoad,
-        .storeOp = vk::AttachmentStoreOp::eStore,
-    };
-
-    vk::RenderingInfo imguiRenderingInfo{
-        .renderArea = {.offset = {0, 0}, .extent = m_swapChainExtent},
-        .layerCount = 1,
-        .colorAttachmentCount = 1,
-        .pColorAttachments = &imguiColorAttachmentInfo,
-    };
-
-    commandBuffer.beginRendering(imguiRenderingInfo);
-    // ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(),
-    //                                 *m_commandBuffer[frameIndex]);
-    commandBuffer.endRendering();
-
     transition_image_layout(
         m_swapChainImages[index], vk::ImageLayout::eColorAttachmentOptimal,
         vk::ImageLayout::ePresentSrcKHR,
