@@ -23,7 +23,7 @@ add_engine_module(
         src/DescriptorPool.cpp
 )
 
-target_link_libraries(renderSystem logSystem sceneSystem resourceSystem platformSystem typesSystem Vulkan::Vulkan glm)
+target_link_libraries(renderSystem fileSystem logSystem sceneSystem resourceSystem platformSystem typesSystem Vulkan::Vulkan glm)
 target_compile_definitions(renderSystem PUBLIC VULKAN_HPP_NO_STRUCT_CONSTRUCTORS)
 
 target_precompile_headers(renderSystem PRIVATE <vulkan/vulkan_raii.hpp>)

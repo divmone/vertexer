@@ -18,6 +18,7 @@
 #include <typesSystem/EngineStats.hpp>
 
 #include "DescriptorSetLayoutBuilder.hpp"
+#include "FileSystem.hpp"
 #include "types/VulkanVertex2d.hpp"
 
 struct EngineStats;
@@ -304,8 +305,8 @@ void VulkanContext::createImageViews() {
 }
 
 void VulkanContext::createGraphicsPipeline() {
-    auto shaderModule =
-        createShaderModule(loadShader("../../../shaders/shader.spv"));
+    auto shaderModule = createShaderModule(
+        loadShader(FS::GetFullPath(FS::FileType::eShader, "shader")));
 
     m_pipelineLayout = PipelineBuilder::createPipelineLayout(
         device_,
@@ -336,7 +337,8 @@ void VulkanContext::createGraphicsPipeline() {
                            .Layout(m_pipelineLayout)
                            .build(device_);
 
-    shaderModule = createShaderModule(loadShader("../../../shaders/sky.spv"));
+    shaderModule = createShaderModule(
+        loadShader(FS::GetFullPath(FS::FileType::eShader, "sky")));
     skyPipelineLayout = PipelineBuilder::createPipelineLayout(
         device_, nullptr,
         {*descriptorSetLayout3d_, *blendingDescriptorSetLayout_});
@@ -353,8 +355,8 @@ void VulkanContext::createGraphicsPipeline() {
 }
 
 void VulkanContext::CreateGraphicsPipeline2d() {
-    auto shaderModule =
-        createShaderModule(loadShader("../../../shaders/shader_2d.spv"));
+    auto shaderModule = createShaderModule(
+        loadShader(FS::GetFullPath(FS::FileType::eShader, "shader_2d")));
 
     pipelineLayout2d_ = PipelineBuilder::createPipelineLayout(
         device_,
@@ -853,12 +855,12 @@ void VulkanContext::createDescriptorPool() {
                                .descriptorCount = MAX_FRAMES_IN_FLIGHT},
         vk::DescriptorPoolSize{
             .type = vk::DescriptorType::eCombinedImageSampler,
-            .descriptorCount = textureCounter + 1},
+            .descriptorCount = MAX_BINDLESS_RESOURCES},
     };
 
     vk::DescriptorPoolCreateInfo poolInfo{
         .flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
-        .maxSets = textureCounter + 1,
+        .maxSets = MAX_BINDLESS_RESOURCES * sizeof(poolSizes),
         .poolSizeCount = static_cast<uint32_t>(poolSizes.size()),
         .pPoolSizes = poolSizes.data()};
     generalDescriptorPool_ = vk::raii::DescriptorPool(device_, poolInfo);
@@ -872,7 +874,7 @@ void VulkanContext::createBindlessDescriptorPool() {
     };
 
     vk::DescriptorPoolCreateInfo poolInfo{
-        .flags = vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind,
+        .flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
         .maxSets = MAX_BINDLESS_RESOURCES * sizeof(poolSizes[0]),
         .poolSizeCount = static_cast<uint32_t>(poolSizes.size()),
         .pPoolSizes = poolSizes.data()};
