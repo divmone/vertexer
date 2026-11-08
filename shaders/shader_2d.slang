@@ -11,6 +11,7 @@ struct VertexOutput {
 };
 
 struct PushConstant{
+    float4x4 model;
     float4 color;
     bool hasTexture;
 };
@@ -24,7 +25,7 @@ VertexOutput vertMain(VertexInput input)
     VertexOutput output;
     output.color = input.color;
     output.texCoord = input.texCoord;
-    output.position = float4(input.pos, 0.0, 1.0);
+    output.position = mul(pc.model, float4(input.pos, 0.0, 1.0));
     return output;
 }
 

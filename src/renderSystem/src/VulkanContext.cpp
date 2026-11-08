@@ -30,10 +30,10 @@ struct overloaded : Ts... {
 
 constexpr std::array<Vertex2d, 4> quadVertices = {{
     //  pos             color                   uv
-    {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},  // 0: левый верх
-    {{-0.5f, 0.5f}, {1.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}},   // 1: правый верх
-    {{0.5f, 0.5f}, {1.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},    // 2: правый низ
-    {{0.5f, -0.5f}, {1.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},   // 3: левый низ
+    {{-1.0f, -1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},  // 0: левый верх
+    {{-1.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}},   // 1: правый верх
+    {{1.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},    // 2: правый низ
+    {{1.0f, -1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},   // 3: левый низ
 }};
 
 constexpr std::array<uint32_t, 6> quadIndices = {0, 1, 2, 2, 3, 0};
@@ -629,6 +629,28 @@ void VulkanContext::recordCommandBuffer(uint32_t index,
 
     {
         commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics,
+                                   graphicsPipeline2d_);
+
+        commandBuffer.bindVertexBuffers(0, *model2d.vertexBuffer, {0});
+        commandBuffer.bindIndexBuffer(*model2d.indexBuffer, 0,
+                                      vk::IndexType::eUint32);
+
+        m_commandBuffer[frameIndex].bindDescriptorSets(
+            vk::PipelineBindPoint::eGraphics, pipelineLayout2d_, 0,
+            *descriptorSets2d_[0], nullptr);
+
+        m_commandBuffer[frameIndex].pushConstants<PushConstantObject2d>(
+            pipelineLayout2d_, vk::ShaderStageFlagBits::eAllGraphics, 0,
+            PushConstantObject2d{
+                glm::translate(glm::mat4{1.0f}, {0.0, 0.0, 0.0}),
+                {0.0, 0.0, 1.0, 1.0},
+                1});
+        m_commandBuffer[frameIndex].drawIndexed(model2d.indicesCount, 1, 0, 0,
+                                                0);
+    }
+
+    {
+        commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics,
                                    graphicsPipeline_);
 
         commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
@@ -709,25 +731,6 @@ void VulkanContext::recordCommandBuffer(uint32_t index,
             stats.drawcallCount++;
             stats.triangleCount += drawCall.indexCount / 3;
         }
-    }
-
-    {
-        commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics,
-                                   graphicsPipeline2d_);
-
-        commandBuffer.bindVertexBuffers(0, *model2d.vertexBuffer, {0});
-        commandBuffer.bindIndexBuffer(*model2d.indexBuffer, 0,
-                                      vk::IndexType::eUint32);
-
-        m_commandBuffer[frameIndex].bindDescriptorSets(
-            vk::PipelineBindPoint::eGraphics, pipelineLayout2d_, 0,
-            *descriptorSets2d_[0], nullptr);
-
-        m_commandBuffer[frameIndex].pushConstants<PushConstantObject2d>(
-            pipelineLayout2d_, vk::ShaderStageFlagBits::eAllGraphics, 0,
-            PushConstantObject2d{{0.0, 0.0, 1.0, 1.0}, 1});
-        m_commandBuffer[frameIndex].drawIndexed(model2d.indicesCount, 1, 0, 0,
-                                                0);
     }
 
     commandBuffer.endRendering();

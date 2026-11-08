@@ -14,6 +14,8 @@
 #include <resourceSystem/types/Model.hpp>
 #include <vulkan/vulkan_raii.hpp>
 
+#include "../../src/types/VulkanSprite.hpp"
+
 struct EngineStats;
 class Scene;
 
@@ -26,6 +28,7 @@ struct PushConstantObject3d {
 };
 
 struct PushConstantObject2d {
+    alignas(16) glm::mat4 model;
     alignas(16) glm::vec4 color;
     alignas(16) uint32_t hasTexture;
 };
@@ -284,4 +287,7 @@ private:
 
     void createBindlessDescriptorSetLayout();
     void createBindlessDescriptorSet();
+
+    std::vector<VkSprite> sprites_;
+    void drawSprites();
 };
