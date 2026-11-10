@@ -15,6 +15,7 @@
 #include <vulkan/vulkan_raii.hpp>
 
 #include "../../src/types/VulkanSprite.hpp"
+#include "types/Metadata.hpp"
 
 struct EngineStats;
 class Scene;
@@ -53,7 +54,7 @@ public:
                   const ExtentProvider& extentProvider);
     ~VulkanContext();
 
-    void drawScene(Scene& scene, EngineStats& stats);
+    void renderFrame(Scene& scene, EngineStats& stats);
 
     void recreateContext();
     void processMinimizedWindow();
@@ -62,6 +63,8 @@ public:
     void setProjMatrix(const glm::mat4&);
     uint32_t loadAsset(const std::string& path);
     void finishLoading();
+
+    Metadata addModel(const Model& model);
 private:
     void initVulkan();
     void createInstance();
@@ -262,8 +265,6 @@ private:
     glm::mat4 view_;
     glm::mat4 proj_;
 
-    std::vector<VkModel> models_;
-
     std::vector<Texture> createTexturesFromImages(
         vk::raii::CommandBuffer& commandBuffer,
         std::vector<vk::raii::Buffer>& stagingBuffersKeepAlive,
@@ -290,4 +291,7 @@ private:
 
     std::vector<VkSprite> sprites_;
     void drawSprites();
+    std::vector<DrawCall> drawCalls2d_;
+
+    std::vector<VkModel> models_;
 };

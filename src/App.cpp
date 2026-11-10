@@ -56,7 +56,7 @@ void App::Run() {
 
         update(deltaTime);
 
-        vulkanContext_.drawScene(scene_, stats);
+        vulkanContext_.renderFrame(scene_, stats);
 
         auto end = std::chrono::high_resolution_clock::now();
 
