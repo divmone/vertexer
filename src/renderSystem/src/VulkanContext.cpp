@@ -627,26 +627,37 @@ void VulkanContext::recordCommandBuffer(uint32_t index,
         }
     }
 
+    // for (const auto& sprite: sprites_) {
+    //     DrawCall drawCall{
+    //         .color = sprite.color_,
+    //         .distanceToCam = 0,
+    //         .hasTexture = sprite.hasTexture_,
+    //         .firstIndex =
+    //     };
+    // }
+
     {
-        commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics,
-                                   graphicsPipeline2d_);
-
-        commandBuffer.bindVertexBuffers(0, *model2d.vertexBuffer, {0});
-        commandBuffer.bindIndexBuffer(*model2d.indexBuffer, 0,
-                                      vk::IndexType::eUint32);
-
-        m_commandBuffer[frameIndex].bindDescriptorSets(
-            vk::PipelineBindPoint::eGraphics, pipelineLayout2d_, 0,
-            *descriptorSets2d_[0], nullptr);
-
-        m_commandBuffer[frameIndex].pushConstants<PushConstantObject2d>(
-            pipelineLayout2d_, vk::ShaderStageFlagBits::eAllGraphics, 0,
-            PushConstantObject2d{
-                glm::translate(glm::mat4{1.0f}, {0.0, 0.0, 0.0}),
-                {0.0, 0.0, 1.0, 1.0},
-                1});
-        m_commandBuffer[frameIndex].drawIndexed(model2d.indicesCount, 1, 0, 0,
-                                                0);
+        // commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics,
+        //                            graphicsPipeline2d_);
+        //
+        // for (const auto& sprite : sprites_) {
+        //     // TODO DrawCall for Sprite!!!!!
+        //     commandBuffer.bindVertexBuffers(0, *sprite.vertexBuffer_, {0});
+        //     commandBuffer.bindIndexBuffer(*sprite.indexBuffer_, 0,
+        //                                   vk::IndexType::eUint32);
+        //
+        //     commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
+        //                                      pipelineLayout2d_, 0,
+        //                                      *descriptorSets2d_[0], nullptr);
+        //
+        //     commandBuffer.pushConstants<PushConstantObject2d>(
+        //         pipelineLayout2d_, vk::ShaderStageFlagBits::eAllGraphics, 0,
+        //         PushConstantObject2d{
+        //             glm::translate(glm::mat4{1.0f}, {0.0, 0.0, 0.0}),
+        //             {0.0, 0.0, 1.0, 1.0},
+        //             1});
+        //     commandBuffer.drawIndexed(model2d.indicesCount, 1, 0, 0, 0);
+        // }
     }
 
     {
@@ -665,22 +676,21 @@ void VulkanContext::recordCommandBuffer(uint32_t index,
 
             for (const auto& drawCall : drawCalls) {
                 if (drawCall.modelIndex == obj.modelIndex) {
-                    m_commandBuffer[frameIndex].bindDescriptorSets(
+                    commandBuffer.bindDescriptorSets(
                         vk::PipelineBindPoint::eGraphics, m_pipelineLayout, 1,
                         *blendDescriptorSets[drawCall.textureIndex], nullptr);
 
-                    m_commandBuffer[frameIndex]
-                        .pushConstants<PushConstantObject3d>(
-                            m_pipelineLayout,
-                            vk::ShaderStageFlagBits::eAllGraphics, 0,
-                            PushConstantObject3d{
-                                drawCall.mat,
-                                drawCall.color,
-                                drawCall.hasTexture,
-                            });
+                    commandBuffer.pushConstants<PushConstantObject3d>(
+                        m_pipelineLayout, vk::ShaderStageFlagBits::eAllGraphics,
+                        0,
+                        PushConstantObject3d{
+                            drawCall.mat,
+                            drawCall.color,
+                            drawCall.hasTexture,
+                        });
 
-                    m_commandBuffer[frameIndex].drawIndexed(
-                        drawCall.indexCount, 1, drawCall.firstIndex, 0, 0);
+                    commandBuffer.drawIndexed(drawCall.indexCount, 1,
+                                              drawCall.firstIndex, 0, 0);
                     stats.drawcallCount++;
                     stats.triangleCount += drawCall.indexCount / 3;
                 }
@@ -717,17 +727,17 @@ void VulkanContext::recordCommandBuffer(uint32_t index,
                 boundModelIndex = drawCall.modelIndex;
             }
 
-            m_commandBuffer[frameIndex].bindDescriptorSets(
+            commandBuffer.bindDescriptorSets(
                 vk::PipelineBindPoint::eGraphics, m_pipelineLayout, 1,
                 *blendDescriptorSets[drawCall.textureIndex], nullptr);
 
-            m_commandBuffer[frameIndex].pushConstants<PushConstantObject3d>(
+            commandBuffer.pushConstants<PushConstantObject3d>(
                 m_pipelineLayout, vk::ShaderStageFlagBits::eAllGraphics, 0,
                 PushConstantObject3d{drawCall.mat, drawCall.color,
                                      drawCall.hasTexture});
 
-            m_commandBuffer[frameIndex].drawIndexed(drawCall.indexCount, 1,
-                                                    drawCall.firstIndex, 0, 0);
+            commandBuffer.drawIndexed(drawCall.indexCount, 1,
+                                      drawCall.firstIndex, 0, 0);
             stats.drawcallCount++;
             stats.triangleCount += drawCall.indexCount / 3;
         }
@@ -1433,6 +1443,11 @@ void VulkanContext::createBindlessDescriptorSet() {
     // device_.updateDescriptorSets(writes, {});
 }
 
+void VulkanContext::drawSprites() {
+    for (const auto& sprite : sprites_) {
+    }
+}
+
 void VulkanContext::finishLoading() {
     model2d = createSample2d();
     createDescriptorPool();
@@ -1442,7 +1457,38 @@ void VulkanContext::finishLoading() {
     // initImGui();
 }
 
-void VulkanContext::drawScene(Scene& scene, EngineStats& stats) {
+Metadata VulkanContext::addModel(const Model& model) {
+    VkModel vkModel;
+    vk::raii::CommandBuffer commandBuffer = beginSingleTimeCommand();
+    std::vector<vk::raii::Buffer> stagingBuffers;
+    std::vector<vk::raii::DeviceMemory> stagingMemories;
+
+    auto [vertexBuffer, vertexBufferMemory] = createUniversalBuffer<Vertex3d>(
+        commandBuffer, stagingBuffers, stagingMemories, model.vertices,
+        vk::BufferUsageFlagBits::eVertexBuffer);
+    vkModel.vertexBuffer = std::move(vertexBuffer);
+    vkModel.vertexBufferMemory = std::move(vertexBufferMemory);
+
+    auto [indexBuffer, indexBufferMemory] = createUniversalBuffer<uint32_t>(
+        commandBuffer, stagingBuffers, stagingMemories, model.indices,
+        vk::BufferUsageFlagBits::eIndexBuffer);
+    vkModel.indexBuffer = std::move(indexBuffer);
+    vkModel.indexBufferMemory = std::move(indexBufferMemory);
+    vkModel.indicesCount = model.indices.size();
+
+    vkModel.meshes = std::move(model.meshes);
+    vkModel.nodes = std::move(model.nodes);
+    vkModel.rootNodes = std::move(model.rootNodes);
+    vkModel.textureOffset = textureCounter;
+    vkModel.textures = createTexturesFromImages(commandBuffer, stagingBuffers,
+                                                stagingMemories, model);
+
+    endSingleTimeCommand(std::move(commandBuffer));
+
+    models_.push_back() return {};
+}
+
+void VulkanContext::renderFrame(Scene& scene, EngineStats& stats) {
     auto fenceResult =
         device_.waitForFences(*drawFence[frameIndex], vk::True, UINT64_MAX);
     if (fenceResult != vk::Result::eSuccess) {
