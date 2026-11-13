@@ -1167,7 +1167,7 @@ vk::raii::CommandBuffer VulkanContext::beginSingleTimeCommand() {
 }
 
 void VulkanContext::endSingleTimeCommand(
-    vk::raii::CommandBuffer&& commandBuffer) {
+    vk::raii::CommandBuffer&& commandBuffer) const {
     commandBuffer.end();
 
     vk::SubmitInfo submitInfo{.commandBufferCount = 1,
@@ -1179,7 +1179,7 @@ void VulkanContext::endSingleTimeCommand(
 vk::Format VulkanContext::findSupportedFormat(
     const std::vector<vk::Format>& candidates,
     vk::ImageTiling tiling,
-    vk::FormatFeatureFlags features) {
+    vk::FormatFeatureFlags features) const {
     for (const auto format : candidates) {
         vk::FormatProperties props =
             m_physicalDevice.getFormatProperties(format);
@@ -1457,7 +1457,7 @@ void VulkanContext::finishLoading() {
     // initImGui();
 }
 
-Metadata VulkanContext::addModel(const Model& model) {
+Metadata VulkanContext::AddModel(const Model& model) {
     VkModel vkModel;
     vk::raii::CommandBuffer commandBuffer = beginSingleTimeCommand();
     std::vector<vk::raii::Buffer> stagingBuffers;
@@ -1476,16 +1476,18 @@ Metadata VulkanContext::addModel(const Model& model) {
     vkModel.indexBufferMemory = std::move(indexBufferMemory);
     vkModel.indicesCount = model.indices.size();
 
-    vkModel.meshes = std::move(model.meshes);
-    vkModel.nodes = std::move(model.nodes);
-    vkModel.rootNodes = std::move(model.rootNodes);
+    vkModel.meshes = model.meshes;
+    vkModel.nodes = model.nodes;
+    vkModel.rootNodes = model.rootNodes;
     vkModel.textureOffset = textureCounter;
     vkModel.textures = createTexturesFromImages(commandBuffer, stagingBuffers,
                                                 stagingMemories, model);
 
     endSingleTimeCommand(std::move(commandBuffer));
 
-    models_.push_back() return {};
+    models_.emplace_back(std::move(vkModel));
+
+    return {static_cast<uint32_t>(models_.size() - 1)};
 }
 
 void VulkanContext::renderFrame(Scene& scene, EngineStats& stats) {

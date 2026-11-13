@@ -13,9 +13,10 @@ public:
         eShader,
         ePipelineCache,
         eAsset,
+        eScene
     };
 
-    static std::string GetFullPath(FileType type, const std::string& path);
-    static const char* GetProjectBinDir();
-    static const char* GetProjectRootDir();
+    static std::string GetFullPath(FileType type, std::string_view path);
+    constexpr static const char* GetProjectBinDir();
+    constexpr static const char* GetProjectRootDir();
 };

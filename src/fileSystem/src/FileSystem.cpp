@@ -7,7 +7,7 @@
 
 #include "fileConfig.hpp"
 
-std::string FS::GetFullPath(FileType type, const std::string& path) {
+std::string FS::GetFullPath(FileType type, std::string_view path) {
     std::filesystem::path fullPath{GetProjectRootDir()};
 
     switch (type) {
@@ -25,6 +25,11 @@ std::string FS::GetFullPath(FileType type, const std::string& path) {
             fullPath /= path;
             fullPath.replace_extension(".cache");
             break;
+        case FileType::eScene:
+            fullPath /= "scene";
+            fullPath /= path;
+            fullPath.replace_extension(".json");
+            break;
         default:
             throw std::runtime_error("Unknown file type");
     }
@@ -32,10 +37,10 @@ std::string FS::GetFullPath(FileType type, const std::string& path) {
     return fullPath.string();
 }
 
-const char* FS::GetProjectBinDir() {
+constexpr const char* FS::GetProjectBinDir() {
     return PROJECT_BIN_DIR;
 }
 
-const char* FS::GetProjectRootDir() {
+constexpr const char* FS::GetProjectRootDir() {
     return PROJECT_ROOT_DIR;
 }
