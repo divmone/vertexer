@@ -1036,13 +1036,21 @@ void VulkanContext::copyBufferToImage(vk::raii::CommandBuffer& commandBuffer,
 
 vk::raii::ShaderModule VulkanContext::createShaderModule(
     const std::vector<char>& code) {
+    if (code.empty() || code.size() % sizeof(uint32_t) != 0) {
+        throw std::runtime_error("Invalid SPIR-V shader code size");
+    }
+
     vk::ShaderModuleCreateInfo shaderModuleCreateInfo{
         .codeSize = code.size() * sizeof(char),
         .pCode = reinterpret_cast<const uint32_t*>(code.data())};
 
-    vk::raii::ShaderModule shaderModule{device_, shaderModuleCreateInfo};
-    return shaderModule;
-}
+    try {
+        return vk::raii::ShaderModule{device_, shaderModuleCreateInfo};
+    } catch (const vk::SystemError& e) {
+        throw std::runtime_error(
+            std::string("Failed to create shader module: ") + e.what());
+    }
+};
 
 std::vector<char> VulkanContext::loadShader(const std::string& filename) {
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
@@ -1368,8 +1376,6 @@ VkModel VulkanContext::createSample2d() {
     textureCounter++;
 
     vkModel.textures.push_back(getTexture());
-
-    LOG_ERROR(model2d.textures.size());
     endSingleTimeCommand(std::move(commandBuffer));
 
     return vkModel;
