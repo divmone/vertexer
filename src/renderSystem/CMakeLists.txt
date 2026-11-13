@@ -21,10 +21,10 @@ add_engine_module(
         src/DescriptorSetLayoutBuilder.cpp
         src/DescriptorPool.hpp
         src/DescriptorPool.cpp
-        src/types/VulkanSprite.hpp
+        include/renderSystem/types/VulkanSprite.hpp
 )
 
 target_link_libraries(renderSystem fileSystem logSystem sceneSystem resourceSystem platformSystem typesSystem Vulkan::Vulkan glm)
-target_compile_definitions(renderSystem PUBLIC VULKAN_HPP_NO_STRUCT_CONSTRUCTORS)
+target_compile_definitions(renderSystem PUBLIC VULKAN_HPP_NO_STRUCT_CONSTRUCTORS GLM_FORCE_RADIANS GLM_FORCE_DEPTH_ZERO_TO_ONE)
 
 target_precompile_headers(renderSystem PRIVATE <vulkan/vulkan_raii.hpp>)

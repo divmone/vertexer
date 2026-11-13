@@ -2,7 +2,7 @@
   "scene": {
     "objects": [
       {
-        "name": "STREET2",
+        "name": "STREET1",
         "position": {
           "x": 0,
           "y": 0,
@@ -18,7 +18,7 @@
           "y": 1,
           "z": 1
         },
-        "model": "../../../assets/subaru_wrx_wagon_gg.glb"
+        "model": "../../../assets/クテミテミ.glb"
       }
     ]
   }

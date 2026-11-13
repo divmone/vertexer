@@ -18,6 +18,6 @@ struct VkModel {
     std::vector<Mesh> meshes;
     std::vector<Node> nodes;
     std::vector<uint32_t> rootNodes;
-    std::vector<Texture> textures;
+    std::vector<VkTexture> textures;
     uint32_t textureOffset{0};
 };
