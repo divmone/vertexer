@@ -8,7 +8,15 @@
 
 #include <logSystem/Logger.hpp>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 Logger::Logger(const std::string& appName, bool isDebug) {
+#ifdef _WIN32
+    SetConsoleOutputCP(CP_UTF8);
+#endif
+
     spdlog::init_thread_pool(8192, 1);
     auto console = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
     console->set_level(isDebug ? spdlog::level::debug : spdlog::level::info);

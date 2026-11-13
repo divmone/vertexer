@@ -10,6 +10,7 @@ add_engine_module(resourceSystem
         include/resourceSystem/SceneLoader.hpp
         src/SceneLoader.cpp
         include/resourceSystem/types/Model.hpp
+        include/resourceSystem/types/Sprite.hpp
 )
 
 target_link_libraries(resourceSystem logSystem typesSystem sceneSystem renderSystem fastgltf::fastgltf stb::stb glm nlohmann_json::nlohmann_json)

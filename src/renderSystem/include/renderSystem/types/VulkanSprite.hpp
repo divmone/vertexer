@@ -14,6 +14,6 @@ struct VkSprite {
     vk::raii::Buffer indexBuffer_{nullptr};
     vk::raii::DeviceMemory indexBufferMemory_{nullptr};
     bool hasTexture_;
-    Texture texture_;
+    VkTexture texture_;
     glm::vec4 color_;
 };

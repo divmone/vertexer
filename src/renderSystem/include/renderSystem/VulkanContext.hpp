@@ -1,11 +1,13 @@
 #pragma once
 
-#include <glm/glm.hpp>
-
 #if defined(_WIN32)
 #define VK_USE_PLATFORM_WIN32_KHR
 #define WIN32_LEAN_AND_MEAN
 #endif
+
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/norm.hpp>
 #include <platformSystem/IExtentProvider.hpp>
 #include <platformSystem/NativeWindowHandler.hpp>
 #include <renderSystem/PSO.hpp>
@@ -14,8 +16,9 @@
 #include <resourceSystem/types/Model.hpp>
 #include <vulkan/vulkan_raii.hpp>
 
-#include "../../src/types/VulkanSprite.hpp"
+#include "resourceSystem/types/Sprite.hpp"
 #include "types/Metadata.hpp"
+#include "types/VulkanSprite.hpp"
 
 struct EngineStats;
 class Scene;
@@ -65,6 +68,7 @@ public:
     void finishLoading();
 
     Metadata AddModel(const Model& model);
+    Metadata AddSprite(const SpriteData& sprite);
 private:
     void initVulkan();
     void createInstance();
@@ -172,7 +176,7 @@ private:
     vk::raii::ImageView depthImageView{nullptr};
     vk::Format depthFormat;
 
-    std::vector<Texture> textures_;
+    std::vector<VkTexture> textures_;
     std::vector<vk::raii::DescriptorSet> blendDescriptorSets;
     void createBlendDescriptorSetLayout();
     void createTextureDescriptorSet();
@@ -265,20 +269,26 @@ private:
     glm::mat4 view_;
     glm::mat4 proj_;
 
-    std::vector<Texture> createTexturesFromImages(
+    std::vector<VkTexture> createTexturesFromImages(
         vk::raii::CommandBuffer& commandBuffer,
-        std::vector<vk::raii::Buffer>& stagingBuffersKeepAlive,
-        std::vector<vk::raii::DeviceMemory>& stagingMemoriesKeepAlive,
+        std::vector<vk::raii::Buffer>& stagingBuffers,
+        std::vector<vk::raii::DeviceMemory>& stagingMemories,
         const Model& model);
+
+    VkTexture CreateVkTextureFromImageData(
+        vk::raii::CommandBuffer& commandBuffer,
+        std::vector<vk::raii::Buffer>& stagingBuffers,
+        std::vector<vk::raii::DeviceMemory>& stagingMemories,
+        const ImageData& imageData);
 
     VkModel loadModel(const std::string& path);
 
     std::vector<DrawCall> drawCalls;
     std::vector<DrawCall> blendDrawCalls;
 
-    VkModel createSample2d();
+    VkSprite createSample2d();
 
-    VkModel model2d;
+    // VkModel model2d;
 
     void createDescriptorSet2d();
     std::vector<vk::raii::DescriptorSet> descriptorSets2d_;
@@ -289,8 +299,10 @@ private:
     void createBindlessDescriptorSetLayout();
     void createBindlessDescriptorSet();
 
+    VkSprite model2d;
     std::vector<VkSprite> sprites_;
-    void drawSprites();
+    void DrawSprites(auto& commandBuffer);
+
     std::vector<DrawCall> drawCalls2d_;
 
     std::vector<VkModel> models_;
