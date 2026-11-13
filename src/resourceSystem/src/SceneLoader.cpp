@@ -8,6 +8,8 @@
 #include <renderSystem/VulkanContext.hpp>
 #include <resourceSystem/SceneLoader.hpp>
 
+#include "resourceSystem/AssetLoader.hpp"
+
 glm::vec3 convertJsonToVec3(nlohmann::json& json) {
     glm::vec3 vec;
     vec.x = json["x"].get<float>();
@@ -17,17 +19,20 @@ glm::vec3 convertJsonToVec3(nlohmann::json& json) {
     return vec;
 }
 
-Scene SceneLoader::loadSceneFromJSON(VulkanContext& vkContext,
-                                     const std::string& path) {
+Scene SceneLoader::LoadSceneFromJSON(std::string_view path) {
     using nlohmann::json;
 
-    if (!std::filesystem::exists(path)) {
-        throw std::runtime_error("SCENE file not found: " + path);
+    const std::filesystem::path filePath{std::string(path)};
+
+    if (!std::filesystem::exists(filePath)) {
+        throw std::runtime_error("SCENE file not found: " + filePath.string());
     }
 
-    std::ifstream file(path);
+    std::ifstream file;
+    file.open(filePath);
+
     if (!file) {
-        throw std::runtime_error("failed to load file: " + path);
+        throw std::runtime_error("failed to load file: " + filePath.string());
     }
 
     Scene scene;
@@ -36,9 +41,8 @@ Scene SceneLoader::loadSceneFromJSON(VulkanContext& vkContext,
 
         auto sceneObj = jsonScene["scene"];
         for (auto& jsonObj : sceneObj["objects"]) {
-            auto idx = vkContext.loadAsset(jsonObj["model"].get<std::string>());
             const auto& name = jsonObj["name"].get<std::string>();
-            auto& obj = scene.AddObject(idx, name);
+            auto& obj = scene.AddObject(0 /*TODO*/, name);
 
             if (jsonObj.contains("position")) {
                 obj.transform.pos = convertJsonToVec3(jsonObj["position"]);
@@ -65,9 +69,51 @@ Scene SceneLoader::loadSceneFromJSON(VulkanContext& vkContext,
         LOG_ERROR(e.what());
     }
 
-    vkContext.finishLoading();
-
-    file.close();
-
     return scene;
+}
+
+SceneMeshData SceneLoader::LoadSceneMeshData(const std::string& path) {
+    using nlohmann::json;
+
+    if (!std::filesystem::exists(path)) {
+        throw std::runtime_error("SCENE file not found: " + path);
+    }
+
+    std::ifstream file(path);
+    if (!file) {
+        throw std::runtime_error("failed to load file: " + path);
+    }
+
+    SceneMeshData meshData;
+
+    try {
+        size_t modelsCount = 0;
+        json jsonScene = json::parse(file);
+
+        auto sceneObj = jsonScene["scene"];
+
+        for (auto& jsonObj : sceneObj["objects"]) {
+            if (jsonObj.contains("model")) {
+                modelsCount++;
+            }
+        }
+
+        meshData.models_.reserve(modelsCount);
+
+        for (auto& jsonObj : sceneObj["objects"]) {
+            if (jsonObj.contains("model")) {
+                auto model = AssetLoader::loadModelFromGltf(
+                    jsonObj["model"].get<std::string>());
+                meshData.models_.emplace_back(std::move(model));
+            }
+        }
+    } catch (const json::parse_error& e) {
+        LOG_ERROR(e.what());
+    } catch (const json::type_error& e) {
+        LOG_ERROR(e.what());
+    } catch (const std::runtime_error& e) {
+        LOG_ERROR(e.what());
+    }
+
+    return meshData;
 }

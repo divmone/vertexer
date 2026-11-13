@@ -30,7 +30,7 @@ private:
     float lastX{0.0f};
     float lastY{0.0f};
     // std::unordered_set<SDL_Keycode> pressedKeys_;
-    void init();
-    void initScene();
-    void update(float deltaTime);
+    void Init();
+    void InitScene();
+    void Update(float deltaTime);
 };

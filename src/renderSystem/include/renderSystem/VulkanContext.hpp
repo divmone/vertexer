@@ -14,12 +14,21 @@
 #include <resourceSystem/types/Model.hpp>
 #include <vulkan/vulkan_raii.hpp>
 
+#include "../../src/types/VulkanSprite.hpp"
+#include "types/Metadata.hpp"
+
 struct EngineStats;
 class Scene;
 
 constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 
-struct PushConstantObject {
+struct PushConstantObject3d {
+    alignas(16) glm::mat4 model;
+    alignas(16) glm::vec4 color;
+    alignas(16) uint32_t hasTexture;
+};
+
+struct PushConstantObject2d {
     alignas(16) glm::mat4 model;
     alignas(16) glm::vec4 color;
     alignas(16) uint32_t hasTexture;
@@ -45,7 +54,7 @@ public:
                   const ExtentProvider& extentProvider);
     ~VulkanContext();
 
-    void drawScene(Scene& scene, EngineStats& stats);
+    void renderFrame(Scene& scene, EngineStats& stats);
 
     void recreateContext();
     void processMinimizedWindow();
@@ -54,6 +63,8 @@ public:
     void setProjMatrix(const glm::mat4&);
     uint32_t loadAsset(const std::string& path);
     void finishLoading();
+
+    Metadata AddModel(const Model& model);
 private:
     void initVulkan();
     void createInstance();
@@ -62,9 +73,13 @@ private:
     void createSurface();
     void createSwapchain();
     void createImageViews();
+
     void createDescriptorSetLayout();
+    void createDescriptorSetLayout2d();
 
     void createGraphicsPipeline();
+    void CreateGraphicsPipeline2d();
+
     void createBlendingPipeline();
 
     void createCommandPool();
@@ -82,9 +97,6 @@ private:
     void createSyncObjects();
     void createUniformBuffers();
     void updateUniformBuffer(uint32_t index);
-    void createDescriptorPool();
-    void initImGui();
-    void createImGuiDescriptorPool();
 
     void createDescriptorSets();
     void createDepthResources();
@@ -107,7 +119,7 @@ private:
     vk::raii::Context m_context;
     vk::raii::Instance instance_{nullptr};
     vk::raii::PhysicalDevice m_physicalDevice{nullptr};
-    vk::raii::Device m_device{nullptr};
+    vk::raii::Device device_{nullptr};
     vk::raii::Queue m_graphicsQueue{nullptr};
 
     vk::raii::SurfaceKHR m_surfaceKHR{nullptr};
@@ -119,13 +131,15 @@ private:
     vk::Extent2D m_swapChainExtent;
     std::vector<vk::raii::ImageView> m_swapChainImageViews;
 
-    vk::raii::DescriptorSetLayout descriptorSetLayout{nullptr};
-    vk::raii::DescriptorSetLayout blendingDescriptorSetLayout{nullptr};
+    vk::raii::DescriptorSetLayout descriptorSetLayout3d_{nullptr};
+    vk::raii::DescriptorSetLayout blendingDescriptorSetLayout_{nullptr};
+    vk::raii::DescriptorSetLayout descriptorSetLayout2d_{nullptr};
 
-    std::unique_ptr<PSO> graphicsPSO_;
-
+    vk::raii::Pipeline graphicsPipeline_{nullptr};
     vk::raii::PipelineLayout m_pipelineLayout{nullptr};
-    vk::raii::Pipeline m_graphicsPipeline{nullptr};
+
+    vk::raii::Pipeline graphicsPipeline2d_{nullptr};
+    vk::raii::PipelineLayout pipelineLayout2d_{nullptr};
 
     vk::raii::Pipeline blendingPipeline{nullptr};
 
@@ -143,7 +157,12 @@ private:
     std::vector<vk::raii::Buffer> uniformBuffers;
     std::vector<vk::raii::DeviceMemory> uniformDevicesMemory;
     std::vector<void*> uniformBuffersMapped;
-    vk::raii::DescriptorPool descriptorPool{nullptr};
+
+    vk::raii::DescriptorPool generalDescriptorPool_{nullptr};
+    vk::raii::DescriptorPool bindlessDescriptorPool_{nullptr};
+    void createDescriptorPool();
+    void createBindlessDescriptorPool();
+
     vk::raii::DescriptorPool imguiDescriptorPool{nullptr};
 
     std::vector<vk::raii::DescriptorSet> descriptorSets;
@@ -156,7 +175,7 @@ private:
     std::vector<Texture> textures_;
     std::vector<vk::raii::DescriptorSet> blendDescriptorSets;
     void createBlendDescriptorSetLayout();
-    void createBlendDescriptorSet();
+    void createTextureDescriptorSet();
 
     uint32_t textureCounter{0};
     void createTexture();
@@ -206,11 +225,11 @@ private:
         vk::MemoryPropertyFlags properties);
 
     vk::raii::CommandBuffer beginSingleTimeCommand();
-    void endSingleTimeCommand(vk::raii::CommandBuffer&& commandBuffer);
+    void endSingleTimeCommand(vk::raii::CommandBuffer&& commandBuffer) const;
 
     vk::Format findSupportedFormat(const std::vector<vk::Format>& candidates,
                                    vk::ImageTiling tiling,
-                                   vk::FormatFeatureFlags features);
+                                   vk::FormatFeatureFlags features) const;
     vk::Format findDepthFormat();
 
     void cleanupSwapChain();
@@ -220,7 +239,7 @@ private:
         vk::raii::CommandBuffer& commandBuffer,
         std::vector<vk::raii::Buffer>& stagingBuffersKeepAlive,
         std::vector<vk::raii::DeviceMemory>& stagingMemoriesKeepAlive,
-        const std::vector<T>& arr,
+        const std::span<const T>& arr,
         vk::BufferUsageFlagBits flag) {
         vk::DeviceSize bufferSize = arr.size() * sizeof(arr[0]);
         auto [stagingBuffer, stagingDeviceMemory] =
@@ -246,8 +265,6 @@ private:
     glm::mat4 view_;
     glm::mat4 proj_;
 
-    std::vector<VkModel> models_;
-
     std::vector<Texture> createTexturesFromImages(
         vk::raii::CommandBuffer& commandBuffer,
         std::vector<vk::raii::Buffer>& stagingBuffersKeepAlive,
@@ -258,4 +275,23 @@ private:
 
     std::vector<DrawCall> drawCalls;
     std::vector<DrawCall> blendDrawCalls;
+
+    VkModel createSample2d();
+
+    VkModel model2d;
+
+    void createDescriptorSet2d();
+    std::vector<vk::raii::DescriptorSet> descriptorSets2d_;
+
+    vk::raii::DescriptorSetLayout bindlessDescriptorSetLayout_{nullptr};
+    vk::raii::DescriptorSet bindlessDescriptorSet_{nullptr};
+
+    void createBindlessDescriptorSetLayout();
+    void createBindlessDescriptorSet();
+
+    std::vector<VkSprite> sprites_;
+    void drawSprites();
+    std::vector<DrawCall> drawCalls2d_;
+
+    std::vector<VkModel> models_;
 };

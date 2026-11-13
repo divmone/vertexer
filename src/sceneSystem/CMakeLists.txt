@@ -13,4 +13,4 @@ add_engine_module(
         src/Camera.cpp
 )
 
-target_link_libraries(sceneSystem logSystem glm fastgltf::fastgltf nlohmann_json::nlohmann_json stb::stb)
+target_link_libraries(sceneSystem resourceSystem logSystem glm fastgltf::fastgltf nlohmann_json::nlohmann_json stb::stb)

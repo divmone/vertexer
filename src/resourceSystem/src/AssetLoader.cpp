@@ -19,7 +19,7 @@
 #include <iostream>
 #include <logSystem/Logger.hpp>
 #include <typesSystem/MeshData.hpp>
-#include <typesSystem/Vertex.hpp>
+#include <typesSystem/Vertex3d.hpp>
 
 namespace {
 glm::mat4 getNodeLocalMatrix(const fastgltf::Node& node) {
@@ -42,7 +42,7 @@ glm::mat4 getNodeLocalMatrix(const fastgltf::Node& node) {
 }
 
 [[maybe_unused]] glm::vec3 computeBoundsCenter(
-    const std::vector<Vertex>& vertices) {
+    const std::vector<Vertex3d>& vertices) {
     if (vertices.empty()) {
         return glm::vec3(0.0f);
     }

@@ -4,13 +4,13 @@
 
 #pragma once
 
-#include <typesSystem/Vertex.hpp>
+#include <typesSystem/Vertex3d.hpp>
 #include <vulkan/vulkan_raii.hpp>
 
-struct VulkanVertex : Vertex {
+struct VulkanVertex3d : Vertex3d {
     static vk::VertexInputBindingDescription getBindingDescription() {
         return {.binding = 0,
-                .stride = sizeof(Vertex),
+                .stride = sizeof(Vertex3d),
                 .inputRate = vk::VertexInputRate::eVertex};
     }
 
@@ -19,22 +19,22 @@ struct VulkanVertex : Vertex {
         return {{{.location = 0,
                   .binding = 0,
                   .format = vk::Format::eR32G32B32Sfloat,
-                  .offset = offsetof(Vertex, pos)},
+                  .offset = offsetof(Vertex3d, pos)},
                  {.location = 1,
                   .binding = 0,
                   .format = vk::Format::eR32G32B32Sfloat,
-                  .offset = offsetof(Vertex, normal)},
+                  .offset = offsetof(Vertex3d, normal)},
                  {.location = 2,
                   .binding = 0,
                   .format = vk::Format::eR32G32B32Sfloat,
-                  .offset = offsetof(Vertex, color)},
+                  .offset = offsetof(Vertex3d, color)},
                  {.location = 3,
                   .binding = 0,
                   .format = vk::Format::eR32G32Sfloat,
-                  .offset = offsetof(Vertex, texCoord)}}};
+                  .offset = offsetof(Vertex3d, texCoord)}}};
     }
 
-    VulkanVertex& operator=(const glm::vec3& position) {
+    VulkanVertex3d& operator=(const glm::vec3& position) {
         if (&this->pos == &position) {
             return *this;
         }
@@ -43,5 +43,3 @@ struct VulkanVertex : Vertex {
         return *this;
     }
 };
-
-;

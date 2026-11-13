@@ -11,6 +11,7 @@ add_subdirectory(platformSystem)
 add_subdirectory(inputSystem)
 add_subdirectory(typesSystem)
 add_subdirectory(uiSystem)
+add_subdirectory(fileSystem)
 
 target_link_libraries(src windowSystem logSystem renderSystem sceneSystem inputSystem resourceSystem typesSystem uiSystem)
 
