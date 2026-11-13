@@ -1368,8 +1368,6 @@ VkModel VulkanContext::createSample2d() {
     textureCounter++;
 
     vkModel.textures.push_back(getTexture());
-
-    LOG_ERROR(model2d.textures.size());
     endSingleTimeCommand(std::move(commandBuffer));
 
     return vkModel;
