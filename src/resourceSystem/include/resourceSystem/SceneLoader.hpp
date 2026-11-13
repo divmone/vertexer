@@ -7,12 +7,14 @@
 #include <sceneSystem/Scene.hpp>
 #include <string>
 
+#include "types/SceneMeshData.hpp"
+
 class VulkanContext;
 
 // TODO FIX IT!!!!
 
 class SceneLoader {
 public:
-    static Scene loadSceneFromJSON(VulkanContext& vkContext,
-                                   const std::string& path);
+    static Scene LoadSceneFromJSON(std::string_view path);
+    static SceneMeshData LoadSceneMeshData(const std::string& path);
 };

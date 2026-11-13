@@ -9,14 +9,22 @@ find_package(glm REQUIRED)
 add_engine_module(
         renderSystem
         include/renderSystem/VulkanContext.hpp src/VulkanContext.cpp
-        include/renderSystem/PipelineBuilder.hpp src/PipelineBuilder.cpp
+        src/PipelineBuilder.hpp src/PipelineBuilder.cpp
         include/renderSystem/PSO.hpp src/PSO.cpp
         include/renderSystem/types/Providers.hpp
-        src/types/VulkanVertex.hpp
+        src/types/VulkanVertex3d.hpp
+        src/types/VulkanVertex2d.hpp
         include/renderSystem/types/DrawCall.hpp
         include/renderSystem/types/VulkanModel.hpp
         include/renderSystem/types/VulkanTexture.hpp
+        src/DescriptorSetLayoutBuilder.hpp
+        src/DescriptorSetLayoutBuilder.cpp
+        src/DescriptorPool.hpp
+        src/DescriptorPool.cpp
+        src/types/VulkanSprite.hpp
 )
 
-target_link_libraries(renderSystem logSystem sceneSystem resourceSystem platformSystem typesSystem Vulkan::Vulkan glm)
+target_link_libraries(renderSystem fileSystem logSystem sceneSystem resourceSystem platformSystem typesSystem Vulkan::Vulkan glm)
 target_compile_definitions(renderSystem PUBLIC VULKAN_HPP_NO_STRUCT_CONSTRUCTORS)
+
+target_precompile_headers(renderSystem PRIVATE <vulkan/vulkan_raii.hpp>)
