@@ -1,6 +1,5 @@
-#include <platformSystem/NativeWindowHandler.hpp>
-
 #include <cstring>
+#include <platformSystem/NativeWindowHandler.hpp>
 
 NativeWindowHandler GetNativeWindowHandler(SDL_Window* window) {
     const SDL_PropertiesID props = SDL_GetWindowProperties(window);
@@ -29,8 +28,8 @@ NativeWindowHandler GetNativeWindowHandler(SDL_Window* window) {
         X11WindowHandler x11;
         x11.display = SDL_GetPointerProperty(
             props, SDL_PROP_WINDOW_X11_DISPLAY_POINTER, nullptr);
-        x11.window = static_cast<uint32_t>(SDL_GetNumberProperty(
-            props, SDL_PROP_WINDOW_X11_WINDOW_NUMBER, 0));
+        x11.window = static_cast<uint32_t>(
+            SDL_GetNumberProperty(props, SDL_PROP_WINDOW_X11_WINDOW_NUMBER, 0));
         return x11;
     }
 #endif
@@ -44,10 +43,13 @@ NativeWindowHandler GetNativeWindowHandler(SDL_Window* window) {
     return std::monostate{};
 }
 
+// NO CLEAN CODE ↓
 
 #if defined(__APPLE__)
-NativeWindowHandler GetNativeWindowHandler(SDL_Window* window, SDL_MetalView view) {
+NativeWindowHandler GetNativeWindowHandler(SDL_Window* window,
+                                           SDL_MetalView view) {
     MacOSWindowHandler macOS;
+    // SDL_MetalView view
     macOS.layer = SDL_Metal_GetLayer(view);
     return macOS;
 }

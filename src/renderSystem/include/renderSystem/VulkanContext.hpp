@@ -64,7 +64,7 @@ public:
     uint32_t loadAsset(const std::string& path);
     void finishLoading();
 
-    Metadata addModel(const Model& model);
+    Metadata AddModel(const Model& model);
 private:
     void initVulkan();
     void createInstance();
@@ -225,11 +225,11 @@ private:
         vk::MemoryPropertyFlags properties);
 
     vk::raii::CommandBuffer beginSingleTimeCommand();
-    void endSingleTimeCommand(vk::raii::CommandBuffer&& commandBuffer);
+    void endSingleTimeCommand(vk::raii::CommandBuffer&& commandBuffer) const;
 
     vk::Format findSupportedFormat(const std::vector<vk::Format>& candidates,
                                    vk::ImageTiling tiling,
-                                   vk::FormatFeatureFlags features);
+                                   vk::FormatFeatureFlags features) const;
     vk::Format findDepthFormat();
 
     void cleanupSwapChain();

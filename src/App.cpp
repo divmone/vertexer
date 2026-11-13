@@ -7,6 +7,8 @@
 #include <resourceSystem/SceneLoader.hpp>
 #include <typesSystem/EngineStats.hpp>
 
+#include "FileSystem.hpp"
+
 App::App()
     : isRunning_(true),
       logger_("APP", true),
@@ -33,7 +35,7 @@ App::App()
             vulkanContext_.recreateContext();
         }
     });
-    init();
+    Init();
 }
 
 void App::Run() {
@@ -54,7 +56,7 @@ void App::Run() {
         float deltaTime = std::chrono::duration<float>(now - lastTime).count();
         lastTime = now;
 
-        update(deltaTime);
+        Update(deltaTime);
 
         vulkanContext_.renderFrame(scene_, stats);
 
@@ -67,16 +69,22 @@ void App::Run() {
     }
 }
 
-void App::init() {
-    initScene();
+void App::Init() {
+    InitScene();
 }
 
-void App::initScene() {
-    scene_ = SceneLoader::loadSceneFromJSON(vulkanContext_,
-                                            "../../../scene/scene.json");
+void App::InitScene() {
+    auto scenePath = FS::GetFullPath(FS::FileType::eScene, "scene");
+    auto meshData = SceneLoader::LoadSceneMeshData(scenePath);
+
+    for (const auto& model : meshData.models_) {
+        vulkanContext_.AddModel(model);
+    }
+    vulkanContext_.finishLoading();
+    scene_ = SceneLoader::LoadSceneFromJSON(scenePath);
 }
 
-void App::update(float deltaTime) {
+void App::Update(float deltaTime) {
     if (inputSystem_.isHeld(SDL_SCANCODE_UP) ||
         inputSystem_.isHeld(SDL_SCANCODE_W)) {
         camera_.move(CameraDirections::Backward, deltaTime);
