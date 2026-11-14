@@ -33,6 +33,8 @@ function(add_engine_module name)
     add_library(engine::${name} ALIAS ${name})  # if you use aliases
 endfunction()
 
+add_compile_definitions(GLM_ENABLE_EXPERIMENTAL)
+
 add_subdirectory(app)
 add_subdirectory(src)
 add_subdirectory(tests)

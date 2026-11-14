@@ -1,5 +1,10 @@
 find_package(SDL3 REQUIRED)
 
+add_compile_definitions(
+        GLM_ENABLE_EXPERIMENTAL
+        GLM_FORCE_RADIANS
+        GLM_FORCE_DEPTH_ZERO_TO_ONE
+)
 add_library(src App.hpp App.cpp)
 
 add_subdirectory(windowSystem)
