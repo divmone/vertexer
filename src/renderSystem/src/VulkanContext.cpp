@@ -1446,7 +1446,7 @@ void VulkanContext::createBindlessDescriptorSet() {
     // device_.updateDescriptorSets(writes, {});
 }
 
-void VulkanContext::DrawSprites(auto& commandBuffer) {
+void VulkanContext::DrawSprites(vk::raii::CommandBuffer& commandBuffer) {
     for (const auto& sprite : sprites_) {
         commandBuffer.bindVertexBuffers(0, *sprite.vertexBuffer_, {0});
         commandBuffer.bindIndexBuffer(*sprite.indexBuffer_, 0,
