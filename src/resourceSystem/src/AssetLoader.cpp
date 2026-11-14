@@ -101,12 +101,12 @@ void processMeshes(const fastgltf::Asset& gltf, Model& model) {
 
             const fastgltf::Accessor& accessor =
                 gltf.accessors[posIt->accessorIndex];
-            size_t initSizeVert = model.vertices.size();
-            model.vertices.resize(initSizeVert + accessor.count);
+            size_t initSizeVert = model.vertices_.size();
+            model.vertices_.resize(initSizeVert + accessor.count);
 
             fastgltf::iterateAccessorWithIndex<glm::vec3>(
                 gltf, accessor, [&](const glm::vec3& position, size_t index) {
-                    model.vertices[index + initSizeVert].pos = position;
+                    model.vertices_[index + initSizeVert].pos = position;
                 });
 
             auto normIt = gltfPrimitive.findAttribute("NORMAL");
@@ -116,11 +116,11 @@ void processMeshes(const fastgltf::Asset& gltf, Model& model) {
                 fastgltf::iterateAccessorWithIndex<glm::vec3>(
                     gltf, normAccessor,
                     [&](const glm::vec3& normal, size_t index) {
-                        model.vertices[index + initSizeVert].normal = normal;
+                        model.vertices_[index + initSizeVert].normal = normal;
                     });
             } else {
                 for (size_t i = 0; i < accessor.count; ++i) {
-                    model.vertices[i + initSizeVert].normal =
+                    model.vertices_[i + initSizeVert].normal =
                         glm::vec3(0.0f, 0.0f, 1.0f);
                 }
             }
@@ -132,12 +132,12 @@ void processMeshes(const fastgltf::Asset& gltf, Model& model) {
                 fastgltf::iterateAccessorWithIndex<glm::vec2>(
                     gltf, texCoordAccessor,
                     [&](const glm::vec2& texCoord, size_t index) {
-                        model.vertices[index + initSizeVert].texCoord =
+                        model.vertices_[index + initSizeVert].texCoord =
                             texCoord;
                     });
             } else {
                 for (size_t i = 0; i < accessor.count; ++i) {
-                    model.vertices[i + initSizeVert].texCoord =
+                    model.vertices_[i + initSizeVert].texCoord =
                         glm::vec2(0.0f, 0.0f);
                 }
             }
@@ -165,7 +165,7 @@ void processMeshes(const fastgltf::Asset& gltf, Model& model) {
             }
         }
 
-        model.meshes.push_back(std::move(mesh));
+        model.meshes_.push_back(std::move(mesh));
     }
 }
 
@@ -177,7 +177,7 @@ void processNodes(const fastgltf::Asset& gltf, Model& model) {
         node.transformation = getNodeLocalMatrix(gltfNode);
         node.children = std::vector<uint32_t>(gltfNode.children.begin(),
                                               gltfNode.children.end());
-        model.nodes.push_back(std::move(node));
+        model.nodes_.push_back(std::move(node));
     }
 }
 
@@ -259,7 +259,7 @@ void processImages(const fastgltf::Asset& gltf,
         images.push_back(future.get());
     }
 
-    model.images = std::move(images);
+    model.images_ = std::move(images);
 }
 }  // namespace
 
@@ -295,7 +295,7 @@ Model AssetLoader::loadModelFromGltf(const std::string& pathToFile) {
     processImages(gltfAsset, model, parentPath);
 
     for (auto rootNodeIndex : scene.nodeIndices) {
-        model.rootNodes.push_back(rootNodeIndex);
+        model.rootNodes_.push_back(rootNodeIndex);
     }
 
     LOG_INFO("Loaded model from file: {}", pathToFile);

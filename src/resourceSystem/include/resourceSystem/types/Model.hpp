@@ -10,10 +10,10 @@
 #include <typesSystem/Vertex3d.hpp>
 
 struct Model {
-    std::vector<Vertex3d> vertices;
+    std::vector<Vertex3d> vertices_;
     std::vector<uint32_t> indices;
-    std::vector<Mesh> meshes;
-    std::vector<Node> nodes;
-    std::vector<uint32_t> rootNodes;
-    std::vector<ImageData> images;
+    std::vector<Mesh> meshes_;
+    std::vector<Node> nodes_;
+    std::vector<uint32_t> rootNodes_;
+    std::vector<ImageData> images_;
 };

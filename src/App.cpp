@@ -80,7 +80,11 @@ void App::InitScene() {
     for (const auto& model : meshData.models_) {
         vulkanContext_.AddModel(model);
     }
+
+    // TODO fix this bad code ↓ ↓ ↓ ↓ ↓ ↓
     vulkanContext_.finishLoading();
+
+    // TODO fix this bad code ↓ ↓ ↓ ↓ ↓ ↓
     scene_ = SceneLoader::LoadSceneFromJSON(scenePath);
 }
 
