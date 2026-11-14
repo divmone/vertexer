@@ -94,6 +94,7 @@ void VulkanContext::createInstance() {
         });
 
     if (unsupportedLayerIt != validationLayers.end()) {
+        LOG_ERROR("Required layer not supported: " + std::string(*unsupportedLayerIt));
         throw std::runtime_error("Required layer not supported: " +
                                  std::string(*unsupportedLayerIt));
     }
@@ -108,6 +109,8 @@ void VulkanContext::createInstance() {
                     return strcmp(extensionProperty.extensionName,
                                   sdlExtension) == 0;
                 })) {
+            LOG_ERROR("Required SDL extension not supported: " +
+                                     std::string(sdlExtensions[i]));
             throw std::runtime_error("Required SDL extension not supported: " +
                                      std::string(sdlExtensions[i]));
         }
@@ -157,6 +160,10 @@ void VulkanContext::createLogicalDevice() {
             return (qfp.queueFlags & vk::QueueFlagBits::eGraphics) !=
                    static_cast<vk::QueueFlags>(0);
         });
+    if (graphicsQueueFamilyProperty == queueFamilyProperties.end()) {
+        LOG_WARN("No graphics queue family found on physical device");
+        throw std::runtime_error("No graphics queue family found");
+    }
     queueFamilyIndex = static_cast<uint32_t>(std::distance(
         queueFamilyProperties.begin(), graphicsQueueFamilyProperty));
 
@@ -204,6 +211,11 @@ void VulkanContext::createSurface() {
 
 vk::SurfaceFormatKHR VulkanContext::chooseSwapSurfaceFormat(
     const std::vector<vk::SurfaceFormatKHR>& availableFormats) {
+    if (availableFormats.empty()) {
+        LOG_WARN("No swapchain surface formats available");
+        throw std::runtime_error("No swapchain surface formats available");
+    }
+
     const auto formatIt =
         std::ranges::find_if(availableFormats, [](const auto& format) {
             return format.format == vk::Format::eB8G8R8A8Srgb &&
@@ -233,7 +245,8 @@ vk::Extent2D VulkanContext::chooseSwapExtent(
     }
 
     std::tie(width_, height_) = extentProvider_.GetExtentSizes();
-    LOG_ERROR("std::tie(width_, height_) = extentProvider_.GetExtentSizes();");
+    LOG_WARN("Swap extent is not set by surface, using window extent {}x{}",
+             width_, height_);
     return {
         .width = std::clamp<uint32_t>(width_, capabilities.minImageExtent.width,
                                       capabilities.maxImageExtent.width),
@@ -1061,6 +1074,11 @@ std::vector<char> VulkanContext::loadShader(const std::string& filename) {
     std::vector<char> buffer(file.tellg());
     file.seekg(0, std::ios::beg);
     file.read(buffer.data(), static_cast<std::streamsize>(buffer.size()));
+    if (!file) {
+        LOG_WARN("Failed to read shader file '{}': read {} of {} bytes",
+                 filename, file.gcount(), buffer.size());
+        throw std::runtime_error("Failed to read file: " + filename);
+    }
 
     file.close();
     return buffer;
@@ -1228,6 +1246,15 @@ std::vector<Texture> VulkanContext::createTexturesFromImages(
     std::vector<Texture> textures;
 
     for (const auto& imageData : model.images) {
+        if (imageData.data == nullptr || imageData.width == 0 ||
+            imageData.height == 0) {
+            LOG_WARN(
+                "Skipping empty texture: size={}x{}, channels={}, data={}",
+                imageData.width, imageData.height, imageData.channels,
+                imageData.data == nullptr ? "null" : "valid");
+            continue;
+        }
+
         Texture texture;
         vk::DeviceSize imageSize =
             imageData.width * imageData.height * imageData.channels;
@@ -1507,6 +1534,7 @@ void VulkanContext::renderFrame(Scene& scene, EngineStats& stats) {
         UINT64_MAX, *presentCompleteSemaphore[frameIndex], nullptr);
 
     if (result == vk::Result::eErrorOutOfDateKHR) {
+        LOG_WARN("Swapchain is out of date, recreating");
         recreateContext();
         return;
     }
@@ -1549,6 +1577,8 @@ void VulkanContext::renderFrame(Scene& scene, EngineStats& stats) {
     result = m_graphicsQueue.presentKHR(presentInfoKHR);
     if ((result == vk::Result::eSuboptimalKHR) ||
         (result == vk::Result::eErrorOutOfDateKHR)) {
+        LOG_WARN("Present returned {}, recreating swapchain",
+                 vk::to_string(result));
         recreateContext();
     } else {
         assert(result == vk::Result::eSuccess);

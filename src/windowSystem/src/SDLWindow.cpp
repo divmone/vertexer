@@ -27,15 +27,17 @@ SDLWindow::SDLWindow(const char* title,
 
     window_ = SDL_CreateWindow(title_, width_, height_, flags);
 
-    SDL_SyncWindow(window_);
-
-    if (isMaximize) {
-        SDL_GetWindowSizeInPixels(window_, &width_, &height_);
-    }
-
     if (!window_) {
         LOG_ERROR("Failed to create window: {}", SDL_GetError());
         throw std::runtime_error("Failed to create window");
+    }
+
+    if (!SDL_SyncWindow(window_)) {
+        LOG_WARN("SDL_SyncWindow failed: {}", SDL_GetError());
+    }
+
+    if (isMaximize) {
+        SDL_GetWindowSizeInPixels(window_, &width_, &height_);
     }
 
 #if defined(__APPLE__)
@@ -98,6 +100,8 @@ NativeWindowHandler SDLWindow::GetNativeHandler() const {
 }
 
 std::vector<const char*> SDLWindow::GetExtensionNames() const {
+    LOG_WARN("SDLWindow::GetExtensionNames is not implemented, returning empty list");
+    return {};
     // uint32_t sdlExtensionCount = 0;
     // auto sdlExtensions =
     // SDL_Vulkan_GetInstanceExtensions(&sdlExtensionCount); auto
