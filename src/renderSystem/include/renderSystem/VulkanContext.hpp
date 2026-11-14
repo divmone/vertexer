@@ -286,9 +286,6 @@ private:
     std::vector<DrawCall> drawCalls;
     std::vector<DrawCall> blendDrawCalls;
 
-    VkSprite createSample2d();
-
-    // VkModel model2d;
 
     void createDescriptorSet2d();
     std::vector<vk::raii::DescriptorSet> descriptorSets2d_;
@@ -303,7 +300,11 @@ private:
     std::vector<VkSprite> sprites_;
     void DrawSprites(vk::raii::CommandBuffer& commandBuffer);
 
+    void CreateDescriptorSetForSprite(VkSprite& sprite);
+
     std::vector<DrawCall> drawCalls2d_;
 
     std::vector<VkModel> models_;
+
+    size_t texture2dIndex_{0};
 };

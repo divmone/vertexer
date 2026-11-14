@@ -7,6 +7,8 @@
 #include <renderSystem/types/VulkanTexture.hpp>
 #include <vulkan/vulkan_raii.hpp>
 
+#include "renderSystem/VulkanContext.hpp"
+
 struct VkSprite {
     uint32_t indicesCount_ = 0;
     vk::raii::Buffer vertexBuffer_{nullptr};
@@ -16,4 +18,6 @@ struct VkSprite {
     bool hasTexture_;
     VkTexture texture_;
     glm::vec4 color_;
+    vk::raii::DescriptorSet descriptorSet_{nullptr};
+    //std::vector<vk::raii::DescriptorSet> descriptorSets_;
 };

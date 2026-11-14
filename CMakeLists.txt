@@ -38,3 +38,10 @@ add_compile_definitions(GLM_ENABLE_EXPERIMENTAL)
 add_subdirectory(app)
 add_subdirectory(src)
 add_subdirectory(tests)
+
+
+install(TARGETS app RUNTIME DESTINATION .)
+
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/assets" DESTINATION .)
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/shaders" DESTINATION .)
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/scene" DESTINATION .)

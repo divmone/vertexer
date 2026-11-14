@@ -8,6 +8,7 @@
 #include <typesSystem/EngineStats.hpp>
 
 #include "FileSystem.hpp"
+#include "resourceSystem/AssetLoader.hpp"
 
 App::App()
     : isRunning_(true),
@@ -81,6 +82,22 @@ void App::InitScene() {
         vulkanContext_.AddModel(model);
     }
 
+    SpriteData spriteData;
+    constexpr std::array<Vertex2d, 4> quadVertices = {{
+        //  pos             color                   uv
+        {{-1.0f, -1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},  // 0: левый верх
+        {{-1.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}},   // 1: правый верх
+        {{1.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},    // 2: правый низ
+        {{1.0f, -1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},   // 3: левый низ
+    }};
+
+    constexpr std::array<uint32_t, 6> quadIndices = {0, 1, 2, 2, 3, 0};
+
+    spriteData.vertices_.assign(quadVertices.begin(), quadVertices.end());
+    spriteData.indices_.assign(quadIndices.begin(), quadIndices.end());
+    spriteData.image_ = AssetLoader::loadImageDataFromFile(FS::GetFullPath(FS::FileType::eAsset, "test2.jpg"));
+
+    vulkanContext_.AddSprite(spriteData);
     // TODO fix this bad code ↓ ↓ ↓ ↓ ↓ ↓
     vulkanContext_.finishLoading();
 
