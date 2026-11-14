@@ -301,7 +301,7 @@ private:
 
     VkSprite model2d;
     std::vector<VkSprite> sprites_;
-    void DrawSprites(auto& commandBuffer);
+    void DrawSprites(vk::raii::CommandBuffer& commandBuffer);
 
     std::vector<DrawCall> drawCalls2d_;
 
