@@ -1357,7 +1357,7 @@ void VulkanContext::DrawSprites(vk::raii::CommandBuffer& commandBuffer) {
                 glm::translate(glm::mat4{1.0f}, {0.0, 0.0, 0.0}),
                 {0.0, 0.0, 1.0, 1.0},
                 1});
-        commandBuffer.drawIndexed(model2d.indicesCount_, 1, 0, 0, 0);
+        commandBuffer.drawIndexed(sprite.indicesCount_, 1, 0, 0, 0);
     }
 }
 
