@@ -23,15 +23,7 @@ struct overloaded : Ts... {
     using Ts::operator()...;
 };
 
-constexpr std::array<Vertex2d, 4> quadVertices = {{
-    //  pos             color                   uv
-    {{-1.0f, -1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},  // 0: левый верх
-    {{-1.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}},   // 1: правый верх
-    {{1.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},    // 2: правый низ
-    {{1.0f, -1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},   // 3: левый низ
-}};
-
-constexpr std::array<uint32_t, 6> quadIndices = {0, 1, 2, 2, 3, 0};
+constexpr uint32_t MAX_BINDLESS_RESOURCES = 20000;
 
 VulkanContext::VulkanContext(NativeWindowHandler windowHandler,
                              const ExtentProvider& extentProvider)
@@ -62,6 +54,7 @@ void VulkanContext::initVulkan() {
     createUniformBuffers();
     createCommandBuffer();
     createSyncObjects();
+    createDescriptorPool();
 }
 
 void VulkanContext::createInstance() {
@@ -631,31 +624,10 @@ void VulkanContext::recordCommandBuffer(uint32_t index,
     //     };
     // }
 
-    {
-        commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics,
-                                   graphicsPipeline2d_);
+    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics,
+                                  graphicsPipeline2d_);
 
-        // for (const auto& sprite : sprites_) {
-        // TODO DrawCall for Sprite!!!!!
-
-        auto& sprite = model2d;
-        commandBuffer.bindVertexBuffers(0, *sprite.vertexBuffer_, {0});
-        commandBuffer.bindIndexBuffer(*sprite.indexBuffer_, 0,
-                                      vk::IndexType::eUint32);
-
-        commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
-                                         pipelineLayout2d_, 0,
-                                         *descriptorSets2d_[0], nullptr);
-
-        commandBuffer.pushConstants<PushConstantObject2d>(
-            pipelineLayout2d_, vk::ShaderStageFlagBits::eAllGraphics, 0,
-            PushConstantObject2d{
-                glm::translate(glm::mat4{1.0f}, {0.0, 0.0, 0.0}),
-                {0.0, 0.0, 1.0, 1.0},
-                1});
-        commandBuffer.drawIndexed(model2d.indicesCount_, 1, 0, 0, 0);
-        // }
-    }
+    DrawSprites(commandBuffer);
 
     {
         commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics,
@@ -838,9 +810,8 @@ void VulkanContext::updateUniformBuffer(uint32_t index) {
     std::memcpy(uniformBuffersMapped[index], &ubo, sizeof(ubo));
 }
 
-constexpr uint32_t MAX_BINDLESS_RESOURCES = 20000;
-
 void VulkanContext::createDescriptorPool() {
+
     std::array poolSizes{
         vk::DescriptorPoolSize{.type = vk::DescriptorType::eUniformBuffer,
                                .descriptorCount = MAX_FRAMES_IN_FLIGHT},
@@ -851,7 +822,7 @@ void VulkanContext::createDescriptorPool() {
 
     vk::DescriptorPoolCreateInfo poolInfo{
         .flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
-        .maxSets = MAX_BINDLESS_RESOURCES * sizeof(poolSizes),
+        .maxSets = MAX_BINDLESS_RESOURCES,
         .poolSizeCount = static_cast<uint32_t>(poolSizes.size()),
         .pPoolSizes = poolSizes.data()};
     generalDescriptorPool_ = vk::raii::DescriptorPool(device_, poolInfo);
@@ -1302,82 +1273,6 @@ VkModel VulkanContext::loadModel(const std::string& path) {
     return vkModel;
 }
 
-VkSprite VulkanContext::createSample2d() {
-    VkSprite vkModel;
-    vk::raii::CommandBuffer commandBuffer = beginSingleTimeCommand();
-
-    std::vector<vk::raii::Buffer> stagingBuffers;
-    std::vector<vk::raii::DeviceMemory> stagingMemories;
-
-    auto [vertexBuffer, vertexBufferMemory] = createUniversalBuffer<Vertex2d>(
-        commandBuffer, stagingBuffers, stagingMemories, quadVertices,
-        vk::BufferUsageFlagBits::eVertexBuffer);
-
-    vkModel.vertexBuffer_ = std::move(vertexBuffer);
-    vkModel.vertexBufferMemory_ = std::move(vertexBufferMemory);
-
-    auto [indexBuffer, indexBufferMemory] = createUniversalBuffer<uint32_t>(
-        commandBuffer, stagingBuffers, stagingMemories, quadIndices,
-        vk::BufferUsageFlagBits::eIndexBuffer);
-
-    vkModel.indexBuffer_ = std::move(indexBuffer);
-    vkModel.indexBufferMemory_ = std::move(indexBufferMemory);
-    vkModel.indicesCount_ = quadIndices.size();
-
-    std::vector<VkTexture> textures;
-
-    auto getTexture = [&]() -> VkTexture {
-        ImageData imageData =
-            AssetLoader::loadImageDataFromFile("../../../assets/test2.jpg");
-
-        VkTexture texture;
-        vk::DeviceSize imageSize =
-            imageData.width * imageData.height * imageData.channels;
-        auto [stagingBuffer, stagingBufferMemory] =
-            createBuffer(imageSize, vk::BufferUsageFlagBits::eTransferSrc,
-                         vk::MemoryPropertyFlagBits::eHostVisible |
-                             vk::MemoryPropertyFlagBits::eHostCoherent);
-        void* data = stagingBufferMemory.mapMemory(0, imageSize);
-        memcpy(data, imageData.data, imageSize);
-        stagingBufferMemory.unmapMemory();
-
-        std::tie(texture.textureImage, texture.textureImageMemory) =
-            createImage(imageData.width, imageData.height,
-                        vk::Format::eR8G8B8A8Srgb, vk::ImageTiling::eOptimal,
-                        vk::ImageUsageFlagBits::eTransferDst |
-                            vk::ImageUsageFlagBits::eSampled,
-                        vk::MemoryPropertyFlagBits::eDeviceLocal);
-
-        transitionImageLayout(commandBuffer, texture.textureImage,
-                              vk::ImageLayout::eUndefined,
-                              vk::ImageLayout::eTransferDstOptimal);
-        copyBufferToImage(commandBuffer, stagingBuffer, texture.textureImage,
-                          static_cast<uint32_t>(imageData.width),
-                          static_cast<uint32_t>(imageData.height));
-        transitionImageLayout(commandBuffer, texture.textureImage,
-                              vk::ImageLayout::eTransferDstOptimal,
-                              vk::ImageLayout::eShaderReadOnlyOptimal);
-
-        texture.textureImageView =
-            createImageView(texture.textureImage, vk::Format::eR8G8B8A8Srgb,
-                            vk::ImageAspectFlagBits::eColor);
-
-        vk::SamplerCreateInfo samplerInfo{};
-        texture.textureSampler = vk::raii::Sampler(device_, samplerInfo);
-
-        stagingBuffers.push_back(std::move(stagingBuffer));
-        stagingMemories.push_back(std::move(stagingBufferMemory));
-        return texture;
-    };
-
-    textureCounter++;
-
-    vkModel.texture_ = getTexture();
-    endSingleTimeCommand(std::move(commandBuffer));
-
-    return vkModel;
-}
-
 void VulkanContext::createDescriptorSet2d() {
     vk::DescriptorSetAllocateInfo allocInfo{
         .descriptorPool = generalDescriptorPool_,
@@ -1454,7 +1349,7 @@ void VulkanContext::DrawSprites(vk::raii::CommandBuffer& commandBuffer) {
 
         commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
                                          pipelineLayout2d_, 0,
-                                         *descriptorSets2d_[0], nullptr);
+                                         *sprite.descriptorSet_, nullptr);
 
         commandBuffer.pushConstants<PushConstantObject2d>(
             pipelineLayout2d_, vk::ShaderStageFlagBits::eAllGraphics, 0,
@@ -1466,12 +1361,36 @@ void VulkanContext::DrawSprites(vk::raii::CommandBuffer& commandBuffer) {
     }
 }
 
+void VulkanContext::CreateDescriptorSetForSprite(VkSprite& sprite) {
+    vk::DescriptorSetAllocateInfo allocInfo{
+        .descriptorPool = generalDescriptorPool_,
+        .descriptorSetCount = 1,
+        .pSetLayouts = &*descriptorSetLayout2d_};
+
+    sprite.descriptorSet_ = std::move(device_.allocateDescriptorSets(allocInfo)[0]);
+
+
+    const auto& texture = sprite.texture_;
+
+    vk::DescriptorImageInfo imageInfo{
+        .sampler = texture.textureSampler,
+        .imageView = texture.textureImageView,
+        .imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal};
+
+    std::array writes{vk::WriteDescriptorSet{
+        .dstSet = sprite.descriptorSet_,
+        .dstBinding = 0,
+        .dstArrayElement = 0,
+        .descriptorCount = 1,
+        .descriptorType = vk::DescriptorType::eCombinedImageSampler,
+        .pImageInfo = &imageInfo}};
+    device_.updateDescriptorSets(writes, {});
+}
+
 void VulkanContext::finishLoading() {
-    model2d = createSample2d();
-    createDescriptorPool();
     createDescriptorSets();
     createTextureDescriptorSet();
-    createDescriptorSet2d();
+    //createDescriptorSet2d();
     // initImGui();
 }
 
@@ -1532,6 +1451,11 @@ Metadata VulkanContext::AddSprite(const SpriteData& sprite) {
 
     VkTexture texture = CreateVkTextureFromImageData(
         commandBuffer, stagingBuffers, stagingMemories, sprite.image_);
+
+    vkSprite.texture_ = std::move(texture);
+
+    CreateDescriptorSetForSprite(vkSprite);
+
     endSingleTimeCommand(std::move(commandBuffer));
 
     sprites_.emplace_back(std::move(vkSprite));
