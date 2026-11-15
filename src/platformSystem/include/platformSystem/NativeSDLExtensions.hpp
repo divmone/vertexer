@@ -2,6 +2,8 @@
 #include <variant>
 #include <vector>
 
+#include <logSystem/Logger.hpp>
+
 #include "NativeWindowHandler.hpp"
 
 inline std::vector<const char*> GetNativeSDLExtensions(const NativeWindowHandler& h) {
@@ -10,6 +12,8 @@ inline std::vector<const char*> GetNativeSDLExtensions(const NativeWindowHandler
             using T = std::decay_t<decltype(handler)>;
 
             if constexpr (std::is_same_v<T, std::monostate>) {
+                LOG_ERROR(
+                    "GetNativeSDLExtensions: empty NativeWindowHandler");
                 throw std::runtime_error(
                     "GetNativeSDLExtensions: empty NativeWindowHandler");
             }

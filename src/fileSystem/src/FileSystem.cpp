@@ -5,6 +5,8 @@
 #include <FileSystem.hpp>
 #include <filesystem>
 
+#include <logSystem/Logger.hpp>
+
 #include "fileConfig.hpp"
 
 #if defined(_WIN32)
@@ -45,6 +47,7 @@ std::string FS::GetFullPath(FileType type, std::string_view path) {
             fullPath.replace_extension(".json");
             break;
         default:
+            LOG_ERROR("Unknown file type");
             throw std::runtime_error("Unknown file type");
     }
 

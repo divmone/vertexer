@@ -7,3 +7,4 @@
 /.claude
 /out
 /tests/cmake-build-debug/
+/.vscode

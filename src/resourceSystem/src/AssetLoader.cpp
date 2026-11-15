@@ -187,6 +187,8 @@ ImageData decodeGltfImage(const fastgltf::Asset& gltf,
     return std::visit(
         fastgltf::visitor{
             [](const auto& arg) -> ImageData {
+                LOG_ERROR("unsupported glTF image data source: {}",
+                          typeid(arg).name());
                 throw std::runtime_error(
                     std::string("unsupported glTF image data source: ") +
                     typeid(arg).name());
@@ -204,6 +206,7 @@ ImageData decodeGltfImage(const fastgltf::Asset& gltf,
                     static_cast<int>(arr.bytes.size()), &x, &y, &n,
                     STBI_rgb_alpha);
                 if (!data) {
+                    LOG_ERROR("failed to decode embedded image (URI)");
                     throw std::runtime_error("failed to decode embedded image");
                 }
                 ImageData img;
@@ -228,6 +231,7 @@ ImageData decodeGltfImage(const fastgltf::Asset& gltf,
                     ptr, static_cast<int>(bufferView.byteLength), &x, &y, &n,
                     STBI_rgb_alpha);
                 if (!data) {
+                    LOG_ERROR("failed to decode embedded image (BufferView)");
                     throw std::runtime_error("failed to decode embedded image");
                 }
                 ImageData img;
@@ -269,6 +273,8 @@ Model AssetLoader::loadModelFromGltf(const std::string& pathToFile) {
     auto gltfFile = fastgltf::GltfDataBuffer::FromPath(pathToFile);
 
     if (gltfFile.error() != fastgltf::Error::None) {
+        LOG_ERROR("failed to load glTF file {}: {}", pathToFile,
+                  getErrorMessage(gltfFile.error()).data());
         throw std::runtime_error(getErrorMessage(gltfFile.error()).data());
     }
     std::filesystem::path path(pathToFile);
@@ -278,12 +284,15 @@ Model AssetLoader::loadModelFromGltf(const std::string& pathToFile) {
                                  fastgltf::Options::LoadExternalBuffers);
 
     if (asset.error() != fastgltf::Error::None) {
+        LOG_ERROR("failed to parse glTF asset {}: {}", pathToFile,
+                  getErrorMessage(asset.error()).data());
         throw std::runtime_error(getErrorMessage(asset.error()).data());
     }
 
     auto& gltfAsset = asset.get();
 
     if (gltfAsset.scenes.empty()) {
+        LOG_ERROR("glTF has no scenes: {}", pathToFile);
         throw std::runtime_error("glTF has no scenes");
     }
 

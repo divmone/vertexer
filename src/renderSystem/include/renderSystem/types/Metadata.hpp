@@ -3,3 +3,9 @@
 //
 
 #pragma once
+
+#include <cstdint>
+
+struct Metadata {
+    uint32_t modelIndex;
+};

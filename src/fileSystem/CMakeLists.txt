@@ -9,3 +9,5 @@ add_engine_module(fileSystem
 )
 
 target_include_directories(fileSystem PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+
+target_link_libraries(fileSystem PUBLIC logSystem)
