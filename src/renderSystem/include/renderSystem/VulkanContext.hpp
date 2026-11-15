@@ -12,6 +12,7 @@
 #include <platformSystem/NativeWindowHandler.hpp>
 #include <renderSystem/PSO.hpp>
 #include <renderSystem/types/DrawCall.hpp>
+#include <renderSystem/types/DrawCall2d.hpp>
 #include <renderSystem/types/VulkanModel.hpp>
 #include <resourceSystem/types/Model.hpp>
 #include <vulkan/vulkan_raii.hpp>
@@ -34,6 +35,8 @@ struct PushConstantObject3d {
 
 struct PushConstantObject2d {
     alignas(16) glm::mat4 model;
+    alignas(16) glm::mat4 view;
+    alignas(16) glm::mat4 proj;
     alignas(16) glm::vec4 color;
     alignas(16) uint32_t hasTexture;
 };
@@ -65,11 +68,16 @@ public:
 
     void setViewMatrix(const glm::mat4&);
     void setProjMatrix(const glm::mat4&);
+    void SetProj2dMatrix(const glm::mat4&);
+
     uint32_t loadAsset(const std::string& path);
     void finishLoading();
 
-    Metadata AddModel(const Model& model);
-    Metadata AddSprite(const SpriteData& sprite);
+    SpriteHandle AddModel(const Model& model);
+    SpriteHandle AddSprite(const SpriteData& sprite);
+
+    void DrawSprite(const Sprite& sprite);
+
 private:
     void initVulkan();
     void createInstance();
@@ -270,6 +278,9 @@ private:
     glm::mat4 view_;
     glm::mat4 proj_;
 
+    glm::mat4 view2d_{1.0f};
+    glm::mat4 proj2d_;
+
     std::vector<VkTexture> createTexturesFromImages(
         vk::raii::CommandBuffer& commandBuffer,
         std::vector<vk::raii::Buffer>& stagingBuffers,
@@ -297,14 +308,14 @@ private:
     void createBindlessDescriptorSet();
 
     std::unordered_map<SpriteHandle, VkSprite> sprites_;
+    SpriteHandle spriteHandle_{0};
 
     void DrawSprites(vk::raii::CommandBuffer& commandBuffer);
-    void DrawSprite(const Sprite& sprite,
-                    vk::raii::CommandBuffer& commandBuffer);
 
     void CreateDescriptorSetForSprite(VkSprite& sprite);
 
-    std::vector<DrawCall> drawCalls2d_;
+    std::vector<DrawCall2d> drawCalls2d_;
+    void RenderDrawCalls2d(vk::raii::CommandBuffer& commandBuffer);
 
     std::vector<VkModel> models_;
 
