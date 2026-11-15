@@ -40,12 +40,6 @@ App::App()
 }
 
 void App::Run() {
-    vulkanContext_.setProjMatrix(
-        glm::perspective(glm::radians(45.0f),
-                         static_cast<float>(window_.GetWidth()) /
-                             static_cast<float>(window_.GetHeight()),
-                         0.1f, 1000.0f));
-
     EngineStats stats;
     auto lastTime = std::chrono::high_resolution_clock::now();
 
@@ -59,6 +53,7 @@ void App::Run() {
 
         Update(deltaTime);
 
+        DrawSprites();
         vulkanContext_.renderFrame(scene_, stats);
 
         auto end = std::chrono::high_resolution_clock::now();
@@ -71,6 +66,16 @@ void App::Run() {
 }
 
 void App::Init() {
+    vulkanContext_.setProjMatrix(
+        glm::perspective(glm::radians(45.0f),
+                         static_cast<float>(window_.GetWidth()) /
+                             static_cast<float>(window_.GetHeight()),
+                         0.1f, 1000.0f));
+
+    vulkanContext_.SetProj2dMatrix(glm::orthoZO(
+        0.0f, static_cast<float>(window_.GetWidth()),
+        static_cast<float>(window_.GetHeight()), 0.0f, 0.0f, 10.0f));
+
     InitScene();
 }
 
@@ -84,20 +89,39 @@ void App::InitScene() {
 
     SpriteData spriteData;
     constexpr std::array<Vertex2d, 4> quadVertices = {{
-        //  pos             color                   uv
-        {{-1.0f, -1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},  // 0: левый верх
-        {{-1.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}},   // 1: правый верх
-        {{1.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},    // 2: правый низ
-        {{1.0f, -1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},   // 3: левый низ
+        // Position        Color                     UV
+        {{-1.0f, -1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},  // Top-left
+        {{1.0f, -1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}},   // Top-right
+        {{1.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},  // Bottom-right
+        {{-1.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},  // Bottom-left
     }};
 
     constexpr std::array<uint32_t, 6> quadIndices = {0, 1, 2, 2, 3, 0};
 
     spriteData.vertices_.assign(quadVertices.begin(), quadVertices.end());
     spriteData.indices_.assign(quadIndices.begin(), quadIndices.end());
-    spriteData.image_ = AssetLoader::loadImageDataFromFile(FS::GetFullPath(FS::FileType::eAsset, "test2.jpg"));
+    spriteData.image_ = AssetLoader::loadImageDataFromFile(
+        FS::GetFullPath(FS::FileType::eAsset, "test2.jpg"));
 
-    vulkanContext_.AddSprite(spriteData);
+    Sprite sprite;
+    sprite.handle_ = vulkanContext_.AddSprite(spriteData);
+    sprite.transform_.pos_ = {500.0f, 500.0f};
+    sprite.transform_.scale_ = {100.0f, 100.0f};
+
+    sprites_.push_back(sprite);
+
+    sprite.transform_.pos_ = {2000.0f, 500.0f};
+    sprite.transform_.scale_ = {500.0f, 500.0f};
+    sprites_.push_back(sprite);
+
+    Sprite sprite2;
+    spriteData.image_ = AssetLoader::loadImageDataFromFile(
+        FS::GetFullPath(FS::FileType::eAsset, "test.jpg"));
+    sprite2.handle_ = vulkanContext_.AddSprite(spriteData);
+    sprite2.transform_.pos_ = {0.0f, 0.0f};
+    sprite2.transform_.scale_ = {300.0f, 300.0f};
+    sprites_.push_back(sprite);
+
     // TODO fix this bad code ↓ ↓ ↓ ↓ ↓ ↓
     vulkanContext_.finishLoading();
 
@@ -141,4 +165,10 @@ void App::Update(float deltaTime) {
     camera_.update(deltaTime);
 
     vulkanContext_.setViewMatrix(camera_.getLookAt());
+}
+
+void App::DrawSprites() {
+    for (const auto& sprite : sprites_) {
+        vulkanContext_.DrawSprite(sprite);
+    }
 }

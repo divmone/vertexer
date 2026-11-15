@@ -33,4 +33,7 @@ private:
     void Init();
     void InitScene();
     void Update(float deltaTime);
+
+    std::vector<Sprite> sprites_;
+    void DrawSprites();
 };

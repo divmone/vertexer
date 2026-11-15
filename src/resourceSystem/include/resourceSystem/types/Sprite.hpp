@@ -16,5 +16,5 @@ using SpriteHandle = uint32_t;
 
 struct Sprite {
     Transform2d transform_;
-    SpriteHandle data_;
+    SpriteHandle handle_;
 };
