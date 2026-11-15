@@ -1,5 +1,6 @@
 #include <platformSystem/NativeVkSurfaceKHR.hpp>
 
+#include <logSystem/Logger.hpp>
 #include <stdexcept>
 #include <type_traits>
 #include <variant>
@@ -39,6 +40,7 @@ VkSurfaceKHR CreateWin32Surface(const vk::raii::Instance& instance,
 
     VkSurfaceKHR s = VK_NULL_HANDLE;
     if (vkCreateWin32SurfaceKHR(*instance, &ci, nullptr, &s) != VK_SUCCESS) {
+        LOG_ERROR("vkCreateWin32SurfaceKHR failed");
         throw std::runtime_error("vkCreateWin32SurfaceKHR failed");
     }
     return s;
@@ -55,6 +57,7 @@ VkSurfaceKHR CreateWaylandSurface(const vk::raii::Instance& instance,
 
     VkSurfaceKHR s = VK_NULL_HANDLE;
     if (vkCreateWaylandSurfaceKHR(*instance, &ci, nullptr, &s) != VK_SUCCESS) {
+        LOG_ERROR("vkCreateWaylandSurfaceKHR failed");
         throw std::runtime_error("vkCreateWaylandSurfaceKHR failed");
     }
     return s;
@@ -69,6 +72,7 @@ VkSurfaceKHR CreateX11Surface(const vk::raii::Instance& instance,
 
     VkSurfaceKHR s = VK_NULL_HANDLE;
     if (vkCreateXlibSurfaceKHR(*instance, &ci, nullptr, &s) != VK_SUCCESS) {
+        LOG_ERROR("vkCreateXlibSurfaceKHR failed");
         throw std::runtime_error("vkCreateXlibSurfaceKHR failed");
     }
     return s;
@@ -84,6 +88,7 @@ VkSurfaceKHR CreateMacOSSurface(const vk::raii::Instance& instance,
 
     VkSurfaceKHR s = VK_NULL_HANDLE;
     if (vkCreateMetalSurfaceEXT(*instance, &ci, nullptr, &s) != VK_SUCCESS) {
+        LOG_ERROR("vkCreateMetalSurfaceKHR failed");
         throw std::runtime_error("vkCreateMetalSurfaceKHR failed");
     }
 
@@ -100,6 +105,8 @@ VkSurfaceKHR GetNativeVkSurfaceKHR(const vk::raii::Instance& instance,
             using T = std::decay_t<decltype(handler)>;
 
             if constexpr (std::is_same_v<T, std::monostate>) {
+                LOG_ERROR(
+                    "GetNativeVkSurfaceKHR: empty NativeWindowHandler");
                 throw std::runtime_error(
                     "GetNativeVkSurfaceKHR: empty NativeWindowHandler");
             }
