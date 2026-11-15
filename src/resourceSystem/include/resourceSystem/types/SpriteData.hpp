@@ -4,7 +4,7 @@
 
 #pragma once
 
-struct Sprit {
+struct SpriteData {
     std::vector<Vertex2d> vertices_;
     std::vector<uint32_t> indices_;
     ImageData image_;

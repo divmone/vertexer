@@ -17,6 +17,7 @@
 #include <vulkan/vulkan_raii.hpp>
 
 #include "resourceSystem/types/Sprite.hpp"
+#include "resourceSystem/types/SpriteData.hpp"
 #include "types/Metadata.hpp"
 #include "types/VulkanSprite.hpp"
 
@@ -286,7 +287,6 @@ private:
     std::vector<DrawCall> drawCalls;
     std::vector<DrawCall> blendDrawCalls;
 
-
     void createDescriptorSet2d();
     std::vector<vk::raii::DescriptorSet> descriptorSets2d_;
 
@@ -296,9 +296,11 @@ private:
     void createBindlessDescriptorSetLayout();
     void createBindlessDescriptorSet();
 
-    VkSprite model2d;
-    std::vector<VkSprite> sprites_;
+    std::unordered_map<SpriteHandle, VkSprite> sprites_;
+
     void DrawSprites(vk::raii::CommandBuffer& commandBuffer);
+    void DrawSprite(const Sprite& sprite,
+                    vk::raii::CommandBuffer& commandBuffer);
 
     void CreateDescriptorSetForSprite(VkSprite& sprite);
 

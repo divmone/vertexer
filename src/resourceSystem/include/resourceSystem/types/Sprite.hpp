@@ -10,8 +10,11 @@
 #include <typesSystem/Vertex3d.hpp>
 #include <vector>
 
-struct SpriteData {
-    std::vector<Vertex2d> vertices_;
-    std::vector<uint32_t> indices_;
-    ImageData image_;
+#include "typesSystem/Transform2d.hpp"
+
+using SpriteHandle = uint32_t;
+
+struct Sprite {
+    Transform2d transform_;
+    SpriteHandle data_;
 };

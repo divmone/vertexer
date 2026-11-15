@@ -9,7 +9,7 @@
 #include <glm/gtc/quaternion.hpp>
 #include <string>
 
-struct Transform {
+struct Transform3d {
     glm::vec3 pos{0.0};
     glm::quat rotation{1.0, 0.0, 0.0, 0.0};
     glm::vec3 scale{1.0, 1.0, 1.0};
@@ -26,9 +26,9 @@ struct Transform {
 };
 
 struct Object {
-    size_t      id;
+    size_t id;
     std::string name;
-    size_t      modelIndex;
-    Transform   transform;
-    glm::vec3   color;
+    size_t modelIndex;
+    Transform3d transform;
+    glm::vec3 color;
 };
