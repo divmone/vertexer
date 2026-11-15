@@ -25,6 +25,7 @@ Scene SceneLoader::LoadSceneFromJSON(std::string_view path) {
     const std::filesystem::path filePath{std::string(path)};
 
     if (!std::filesystem::exists(filePath)) {
+        LOG_ERROR("SCENE file not found: {}", filePath.string());
         throw std::runtime_error("SCENE file not found: " + filePath.string());
     }
 
@@ -32,6 +33,7 @@ Scene SceneLoader::LoadSceneFromJSON(std::string_view path) {
     file.open(filePath);
 
     if (!file) {
+        LOG_ERROR("failed to load file: {}", filePath.string());
         throw std::runtime_error("failed to load file: " + filePath.string());
     }
 
@@ -76,11 +78,13 @@ SceneMeshData SceneLoader::LoadSceneMeshData(const std::string& path) {
     using nlohmann::json;
 
     if (!std::filesystem::exists(path)) {
+        LOG_ERROR("SCENE file not found: {}", path);
         throw std::runtime_error("SCENE file not found: " + path);
     }
 
     std::ifstream file(path);
     if (!file) {
+        LOG_ERROR("failed to load file: {}", path);
         throw std::runtime_error("failed to load file: " + path);
     }
 
