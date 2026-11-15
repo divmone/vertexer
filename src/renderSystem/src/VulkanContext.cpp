@@ -14,6 +14,7 @@
 
 #include "DescriptorSetLayoutBuilder.hpp"
 #include "FileSystem.hpp"
+#include "resourceSystem/types/Sprite.hpp"
 #include "types/VulkanVertex2d.hpp"
 
 struct EngineStats;
@@ -82,6 +83,8 @@ void VulkanContext::createInstance() {
         });
 
     if (unsupportedLayerIt != validationLayers.end()) {
+        LOG_ERROR("Required layer not supported: {}",
+                  *unsupportedLayerIt);
         throw std::runtime_error("Required layer not supported: " +
                                  std::string(*unsupportedLayerIt));
     }
@@ -96,6 +99,8 @@ void VulkanContext::createInstance() {
                     return strcmp(extensionProperty.extensionName,
                                   sdlExtension) == 0;
                 })) {
+            LOG_ERROR("Required SDL extension not supported: {}",
+                      sdlExtensions[i]);
             throw std::runtime_error("Required SDL extension not supported: " +
                                      std::string(sdlExtensions[i]));
         }
@@ -114,6 +119,7 @@ void VulkanContext::createInstance() {
 void VulkanContext::selectPhysicalDevice() {
     auto physicalDevices = instance_.enumeratePhysicalDevices();
     if (physicalDevices.empty()) {
+        LOG_ERROR("Cannot find GPU");
         throw std::runtime_error("Cannot find GPU");
     }
 
@@ -130,6 +136,7 @@ void VulkanContext::selectPhysicalDevice() {
     }
 
     if (m_physicalDevice == nullptr) {
+        LOG_ERROR("Physical device is null");
         throw std::runtime_error("Physical device is null");
     }
 
@@ -936,6 +943,7 @@ uint32_t VulkanContext::findMemoryType(uint32_t typeFilter,
             return i;
         }
     }
+    LOG_ERROR("failed to find suitable memory type!");
     throw std::runtime_error("failed to find suitable memory type!");
 }
 
@@ -1004,6 +1012,7 @@ void VulkanContext::copyBufferToImage(vk::raii::CommandBuffer& commandBuffer,
 vk::raii::ShaderModule VulkanContext::createShaderModule(
     const std::vector<char>& code) {
     if (code.empty() || code.size() % sizeof(uint32_t) != 0) {
+        LOG_ERROR("Invalid SPIR-V shader code size");
         throw std::runtime_error("Invalid SPIR-V shader code size");
     }
 
@@ -1014,6 +1023,7 @@ vk::raii::ShaderModule VulkanContext::createShaderModule(
     try {
         return vk::raii::ShaderModule{device_, shaderModuleCreateInfo};
     } catch (const vk::SystemError& e) {
+        LOG_ERROR("Failed to create shader module: {}", e.what());
         throw std::runtime_error(
             std::string("Failed to create shader module: ") + e.what());
     }
@@ -1022,6 +1032,7 @@ vk::raii::ShaderModule VulkanContext::createShaderModule(
 std::vector<char> VulkanContext::loadShader(const std::string& filename) {
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
     if (!file) {
+        LOG_ERROR("Failed to open file: {}", filename);
         throw std::runtime_error("Failed to open file: " + filename);
     }
 
@@ -1096,6 +1107,7 @@ void VulkanContext::transitionImageLayout(
         sourceStage = vk::PipelineStageFlagBits::eTransfer;
         destinationStage = vk::PipelineStageFlagBits::eFragmentShader;
     } else {
+        LOG_ERROR("unsupported layout transition!");
         throw std::invalid_argument("unsupported layout transition!");
     }
     commandBuffer.pipelineBarrier(sourceStage, destinationStage, {}, {},
@@ -1167,6 +1179,7 @@ vk::Format VulkanContext::findSupportedFormat(
         }
     }
 
+    LOG_ERROR("failed to find supported format!");
     throw std::runtime_error("failed to find supported format!");
 }
 
@@ -1438,7 +1451,9 @@ Metadata VulkanContext::AddSprite(const SpriteData& sprite) {
 
     endSingleTimeCommand(std::move(commandBuffer));
 
-    sprites_.emplace_back(std::move(vkSprite));
+
+    static SpriteHandle www = 0;
+    sprites_[www] = std::move(vkSprite);
 
     return {static_cast<uint32_t>(sprites_.size() - 1)};
 }
@@ -1496,6 +1511,7 @@ void VulkanContext::renderFrame(Scene& scene, EngineStats& stats) {
     auto fenceResult =
         device_.waitForFences(*drawFence[frameIndex], vk::True, UINT64_MAX);
     if (fenceResult != vk::Result::eSuccess) {
+        LOG_ERROR("failed to wait for fence!");
         throw std::runtime_error("failed to wait for fence!");
     }
 
@@ -1511,6 +1527,7 @@ void VulkanContext::renderFrame(Scene& scene, EngineStats& stats) {
         result != vk::Result::eSuboptimalKHR) {
         assert(result == vk::Result::eTimeout ||
                result == vk::Result::eNotReady);
+        LOG_ERROR("failed to acquire swap chain image!");
         throw std::runtime_error("failed to acquire swap chain image!");
     }
 
@@ -1592,11 +1609,13 @@ void VulkanContext::createTexture() {}
 
 uint32_t VulkanContext::loadAsset(const std::string& path) {
     if (!std::filesystem::exists(path)) {
+        LOG_ERROR("file not found: {}", path);
         throw std::runtime_error("file not found: " + path);
     }
 
     std::ifstream file(path);
     if (!file) {
+        LOG_ERROR("Failed to open file: {}", path);
         throw std::runtime_error("Failed to open file: " + path);
     }
 
