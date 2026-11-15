@@ -17,7 +17,7 @@ struct VkSprite {
     vk::raii::DeviceMemory indexBufferMemory_{nullptr};
     bool hasTexture_;
     VkTexture texture_;
-    glm::vec4 color_;
+    glm::vec4 color_{0.0, 1.0, 0.0, 1.0};
     vk::raii::DescriptorSet descriptorSet_{nullptr};
-    //std::vector<vk::raii::DescriptorSet> descriptorSets_;
+    // std::vector<vk::raii::DescriptorSet> descriptorSets_;
 };

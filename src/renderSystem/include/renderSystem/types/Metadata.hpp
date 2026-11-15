@@ -3,7 +3,3 @@
 //
 
 #pragma once
-
-struct Metadata {
-    uint32_t modelIndex;
-};

@@ -135,6 +135,9 @@ void VulkanContext::selectPhysicalDevice() {
 
     LOG_INFO("Selected physical device is: {}",
              m_physicalDevice.getProperties().deviceName.data());
+
+    LOG_INFO("Max PushConstantSize is: {}",
+             m_physicalDevice.getProperties().limits.maxPushConstantsSize);
 }
 
 void VulkanContext::createLogicalDevice() {
@@ -550,9 +553,6 @@ void VulkanContext::recordCommandBuffer(uint32_t index,
     stats.drawcallCount = 0;
     stats.triangleCount = 0;
 
-    drawCalls.clear();
-    blendDrawCalls.clear();
-
     auto& commandBuffer = m_commandBuffer[frameIndex];
 
     commandBuffer.begin({});
@@ -627,7 +627,7 @@ void VulkanContext::recordCommandBuffer(uint32_t index,
     commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics,
                                graphicsPipeline2d_);
 
-    DrawSprites(commandBuffer);
+    RenderDrawCalls2d(commandBuffer);
 
     {
         commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics,
@@ -725,6 +725,10 @@ void VulkanContext::recordCommandBuffer(uint32_t index,
         vk::ImageAspectFlagBits::eColor);
 
     commandBuffer.end();
+
+    drawCalls.clear();
+    blendDrawCalls.clear();
+    drawCalls2d_.clear();
 }
 
 void VulkanContext::createSyncObjects() {
@@ -1272,9 +1276,7 @@ VkModel VulkanContext::loadModel(const std::string& path) {
     return vkModel;
 }
 
-void VulkanContext::createDescriptorSet2d() {
-
-}
+void VulkanContext::createDescriptorSet2d() {}
 
 void VulkanContext::createBindlessDescriptorSetLayout() {
     DescriptorSetLayoutBuilder builder;
@@ -1321,24 +1323,13 @@ void VulkanContext::createBindlessDescriptorSet() {
 
 void VulkanContext::DrawSprites(vk::raii::CommandBuffer& commandBuffer) {}
 
-void VulkanContext::DrawSprite(const Sprite& sprite,
-                               vk::raii::CommandBuffer& commandBuffer) {
-auto& vkSprite = sprites_.at(sprite.data_);
+void VulkanContext::DrawSprite(const Sprite& sprite) {
+    auto& vkSprite = sprites_.at(sprite.handle_);
 
-    commandBuffer.bindVertexBuffers(0, *vkSprite.vertexBuffer_, {0});
-    commandBuffer.bindIndexBuffer(*vkSprite.indexBuffer_, 0,
-                                  vk::IndexType::eUint32);
-
-    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
-                                     pipelineLayout2d_, 0,
-                                     *vkSprite.descriptorSet_, nullptr);
-
-    commandBuffer.pushConstants<PushConstantObject2d>(
-        pipelineLayout2d_, vk::ShaderStageFlagBits::eAllGraphics, 0,
-        PushConstantObject2d{sprite.transform_.GetModelMat(), vkSprite.color_,
-                             vkSprite.hasTexture_});
-
-    commandBuffer.drawIndexed(vkSprite.indicesCount_, 1, 0, 0, 0);
+    drawCalls2d_.push_back({sprite.transform_.GetModelMat(),
+                            vkSprite.hasTexture_, vkSprite.color_,
+                            vkSprite.indicesCount_, *vkSprite.vertexBuffer_,
+                            *vkSprite.indexBuffer_, *vkSprite.descriptorSet_});
 }
 
 void VulkanContext::CreateDescriptorSetForSprite(VkSprite& sprite) {
@@ -1367,6 +1358,25 @@ void VulkanContext::CreateDescriptorSetForSprite(VkSprite& sprite) {
     device_.updateDescriptorSets(writes, {});
 }
 
+void VulkanContext::RenderDrawCalls2d(vk::raii::CommandBuffer& commandBuffer) {
+    for (const auto& drawCall : drawCalls2d_) {
+        commandBuffer.bindVertexBuffers(0, drawCall.vertexBuffer_, {0});
+        commandBuffer.bindIndexBuffer(drawCall.indexBuffer_, 0,
+                                      vk::IndexType::eUint32);
+
+        commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
+                                         pipelineLayout2d_, 0,
+                                         drawCall.descriptorSet_, nullptr);
+
+        commandBuffer.pushConstants<PushConstantObject2d>(
+            pipelineLayout2d_, vk::ShaderStageFlagBits::eAllGraphics, 0,
+            PushConstantObject2d{drawCall.mat, view2d_, proj2d_, drawCall.color,
+                                 1});
+
+        commandBuffer.drawIndexed(drawCall.indexCount, 1, 0, 0, 0);
+    }
+}
+
 void VulkanContext::finishLoading() {
     createDescriptorSets();
     createTextureDescriptorSet();
@@ -1374,7 +1384,7 @@ void VulkanContext::finishLoading() {
     //  initImGui();
 }
 
-Metadata VulkanContext::AddModel(const Model& model) {
+SpriteHandle VulkanContext::AddModel(const Model& model) {
     VkModel vkModel;
     vk::raii::CommandBuffer commandBuffer = beginSingleTimeCommand();
     std::vector<vk::raii::Buffer> stagingBuffers;
@@ -1407,7 +1417,7 @@ Metadata VulkanContext::AddModel(const Model& model) {
     return {static_cast<uint32_t>(models_.size() - 1)};
 }
 
-Metadata VulkanContext::AddSprite(const SpriteData& sprite) {
+SpriteHandle VulkanContext::AddSprite(const SpriteData& sprite) {
     VkSprite vkSprite;
     vk::raii::CommandBuffer commandBuffer = beginSingleTimeCommand();
 
@@ -1438,9 +1448,9 @@ Metadata VulkanContext::AddSprite(const SpriteData& sprite) {
 
     endSingleTimeCommand(std::move(commandBuffer));
 
-    sprites_.emplace_back(std::move(vkSprite));
+    sprites_[spriteHandle_] = std::move(vkSprite);
 
-    return {static_cast<uint32_t>(sprites_.size() - 1)};
+    return spriteHandle_++;
 }
 
 VkTexture VulkanContext::CreateVkTextureFromImageData(
@@ -1586,6 +1596,10 @@ void VulkanContext::setViewMatrix(const glm::mat4& viewMat) {
 
 void VulkanContext::setProjMatrix(const glm::mat4& m) {
     proj_ = m;
+}
+
+void VulkanContext::SetProj2dMatrix(const glm::mat4& m) {
+    proj2d_ = m;
 }
 
 void VulkanContext::createTexture() {}
