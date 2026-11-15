@@ -15,7 +15,7 @@ add_engine_module(platformSystem
         src/NativeWindowHandler.cpp
 )
 
-target_link_libraries(platformSystem PUBLIC SDL3::SDL3 Vulkan::Vulkan)
+target_link_libraries(platformSystem PUBLIC logSystem SDL3::SDL3 Vulkan::Vulkan)
 
 if (WAYLAND_CLIENT_FOUND)
     target_include_directories(platformSystem PRIVATE ${WAYLAND_CLIENT_INCLUDE_DIRS})
