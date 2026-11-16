@@ -83,8 +83,7 @@ void VulkanContext::createInstance() {
         });
 
     if (unsupportedLayerIt != validationLayers.end()) {
-        LOG_ERROR("Required layer not supported: {}",
-                  *unsupportedLayerIt);
+        LOG_ERROR("Required layer not supported: {}", *unsupportedLayerIt);
         throw std::runtime_error("Required layer not supported: " +
                                  std::string(*unsupportedLayerIt));
     }
@@ -524,29 +523,36 @@ void VulkanContext::createCommandBuffer() {
         vk::raii::CommandBuffers(device_, commandBufferAllocateInfo);
 }
 
-void VulkanContext::processNodes(unsigned root,
+void VulkanContext::ProcessNodes(unsigned root,
                                  const glm::mat4& mat,
                                  const VkModel& model,
-                                 uint32_t modelIndex) {
+                                 uint32_t modelIndex,
+                                 std::vector<SubDrawCall>& subDrawCalls) {
     const auto& node = model.nodes[root];
     glm::mat4 world = mat * node.transformation;
 
     if (node.meshIndex != -1) {
         const Mesh& mesh = model.meshes[node.meshIndex];
         for (const auto& prim : mesh.primitives) {
-            drawCalls.push_back(DrawCall{
-                prim.textureIndex + model.textureOffset, world, prim.hasTexture,
-                prim.color, prim.indexCount, prim.firstIndex, 0, modelIndex});
+            subDrawCalls.push_back(
+                {false, prim.hasTexture, prim.color,
+                 prim.textureIndex + model.textureOffset, prim.distanceToCam,
+                 world, prim.indexCount, prim.firstIndex,
+                 textureDescriptorSets[prim.textureIndex +
+                                       model.textureOffset]});
         }
         for (const auto& prim : mesh.blendPrimitives) {
-            blendDrawCalls.push_back(DrawCall{
-                prim.textureIndex + model.textureOffset, world, prim.hasTexture,
-                prim.color, prim.indexCount, prim.firstIndex, 0, modelIndex});
+            subDrawCalls.push_back(
+                {true, prim.hasTexture, prim.color,
+                 prim.textureIndex + model.textureOffset, prim.distanceToCam,
+                 world, prim.indexCount, prim.firstIndex,
+                 textureDescriptorSets[prim.textureIndex +
+                                       model.textureOffset]});
         }
     }
 
     for (const auto& child : node.children) {
-        processNodes(child, world, model, modelIndex);
+        ProcessNodes(child, world, model, modelIndex, subDrawCalls);
     }
 }
 
@@ -554,9 +560,7 @@ void VulkanContext::drawBlendNodes(unsigned root,
                                    const glm::mat4& mat,
                                    const VkModel& model) {}
 
-void VulkanContext::recordCommandBuffer(uint32_t index,
-                                        Scene& scene,
-                                        EngineStats& stats) {
+void VulkanContext::recordCommandBuffer(uint32_t index, EngineStats& stats) {
     stats.drawcallCount = 0;
     stats.triangleCount = 0;
 
@@ -614,14 +618,6 @@ void VulkanContext::recordCommandBuffer(uint32_t index,
     commandBuffer.setScissor(0,
                              vk::Rect2D(vk::Offset2D(0, 0), m_swapChainExtent));
 
-    for (const auto& obj : scene.GetObjects()) {
-        const auto& model = models_[obj.modelIndex];
-        for (const auto& root : model.rootNodes) {
-            processNodes(root, obj.transform.getModelMat(), model,
-                         obj.modelIndex);
-        }
-    }
-
     // for (const auto& sprite: sprites_) {
     //     DrawCall drawCall{
     //         .color = sprite.color_,
@@ -636,88 +632,57 @@ void VulkanContext::recordCommandBuffer(uint32_t index,
 
     RenderDrawCalls2d(commandBuffer);
 
-    {
-        commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics,
-                                   graphicsPipeline_);
+    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics,
+                               graphicsPipeline_);
+    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
+                                     m_pipelineLayout, 0,
+                                     *descriptorSets[frameIndex], nullptr);
+    RenderDrawCalls3d(commandBuffer);
 
-        commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
-                                         m_pipelineLayout, 0,
-                                         *descriptorSets[frameIndex], nullptr);
-
-        for (const auto& obj : scene.GetObjects()) {
-            const auto& model = models_[obj.modelIndex];
-            commandBuffer.bindVertexBuffers(0, *model.vertexBuffer, {0});
-            commandBuffer.bindIndexBuffer(*model.indexBuffer, 0,
-                                          vk::IndexType::eUint32);
-
-            for (const auto& drawCall : drawCalls) {
-                if (drawCall.modelIndex == obj.modelIndex) {
-                    commandBuffer.bindDescriptorSets(
-                        vk::PipelineBindPoint::eGraphics, m_pipelineLayout, 1,
-                        *blendDescriptorSets[drawCall.textureIndex], nullptr);
-
-                    commandBuffer.pushConstants<PushConstantObject3d>(
-                        m_pipelineLayout, vk::ShaderStageFlagBits::eAllGraphics,
-                        0,
-                        PushConstantObject3d{
-                            drawCall.mat,
-                            drawCall.color,
-                            drawCall.hasTexture,
-                        });
-
-                    commandBuffer.drawIndexed(drawCall.indexCount, 1,
-                                              drawCall.firstIndex, 0, 0);
-                    stats.drawcallCount++;
-                    stats.triangleCount += drawCall.indexCount / 3;
-                }
-            }
-        }
-    }
-
-    {
-        commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics,
-                                   blendingPipeline);
-        commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
-                                         m_pipelineLayout, 0,
-                                         *descriptorSets[frameIndex], nullptr);
-
-        auto cameraPos = glm::vec3(glm::inverse(view_)[3]);
-
-        for (auto& drawCall : blendDrawCalls) {
-            drawCall.distanceToCam =
-                glm::length2(cameraPos - glm::vec3(drawCall.mat[3]));
-        }
-
-        std::ranges::sort(blendDrawCalls,
-                          [&](const DrawCall& a, const DrawCall& b) {
-                              return a.distanceToCam > b.distanceToCam;
-                          });
-
-        uint32_t boundModelIndex = std::numeric_limits<uint32_t>::max();
-        for (auto& drawCall : blendDrawCalls) {
-            if (drawCall.modelIndex != boundModelIndex) {
-                const auto& model = models_[drawCall.modelIndex];
-                commandBuffer.bindVertexBuffers(0, *model.vertexBuffer, {0});
-                commandBuffer.bindIndexBuffer(*model.indexBuffer, 0,
-                                              vk::IndexType::eUint32);
-                boundModelIndex = drawCall.modelIndex;
-            }
-
-            commandBuffer.bindDescriptorSets(
-                vk::PipelineBindPoint::eGraphics, m_pipelineLayout, 1,
-                *blendDescriptorSets[drawCall.textureIndex], nullptr);
-
-            commandBuffer.pushConstants<PushConstantObject3d>(
-                m_pipelineLayout, vk::ShaderStageFlagBits::eAllGraphics, 0,
-                PushConstantObject3d{drawCall.mat, drawCall.color,
-                                     drawCall.hasTexture});
-
-            commandBuffer.drawIndexed(drawCall.indexCount, 1,
-                                      drawCall.firstIndex, 0, 0);
-            stats.drawcallCount++;
-            stats.triangleCount += drawCall.indexCount / 3;
-        }
-    }
+    //     commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics,
+    //                                blendingPipeline);
+    //     commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
+    //                                      m_pipelineLayout, 0,
+    //                                      *descriptorSets[frameIndex],
+    //                                      nullptr);
+    //
+    //     auto cameraPos = glm::vec3(glm::inverse(view_)[3]);
+    //
+    //     for (auto& drawCall : blendDrawCalls_) {
+    //         drawCall.distanceToCam =
+    //             glm::length2(cameraPos - glm::vec3(drawCall.mat[3]));
+    //     }
+    //
+    //     std::ranges::sort(blendDrawCalls_,
+    //                       [&](const DrawCall3d& a, const DrawCall3d& b) {
+    //                           return a.distanceToCam > b.distanceToCam;
+    //                       });
+    //
+    //     uint32_t boundModelIndex = std::numeric_limits<uint32_t>::max();
+    //     for (auto& drawCall : blendDrawCalls_) {
+    //         if (drawCall.modelIndex != boundModelIndex) {
+    //             const auto& model = models_[drawCall.modelIndex];
+    //             commandBuffer.bindVertexBuffers(0, *model.vertexBuffer, {0});
+    //             commandBuffer.bindIndexBuffer(*model.indexBuffer, 0,
+    //                                           vk::IndexType::eUint32);
+    //             boundModelIndex = drawCall.modelIndex;
+    //         }
+    //
+    //         commandBuffer.bindDescriptorSets(
+    //             vk::PipelineBindPoint::eGraphics, m_pipelineLayout, 1,
+    //             *textureDescriptorSets[drawCall.textureIndex], nullptr);
+    //
+    //         commandBuffer.pushConstants<PushConstantObject3d>(
+    //             m_pipelineLayout, vk::ShaderStageFlagBits::eAllGraphics, 0,
+    //             PushConstantObject3d{drawCall.mat, drawCall.color,
+    //                                  drawCall.hasTexture});
+    //
+    //         commandBuffer.drawIndexed(drawCall.indexCount, 1,
+    //                                   drawCall.firstIndex, 0, 0);
+    //         stats.drawcallCount++;
+    //         stats.triangleCount += drawCall.indexCount / 3;
+    //     }
+    // }
 
     commandBuffer.endRendering();
 
@@ -733,8 +698,8 @@ void VulkanContext::recordCommandBuffer(uint32_t index,
 
     commandBuffer.end();
 
-    drawCalls.clear();
-    blendDrawCalls.clear();
+    drawCalls_.clear();
+    blendDrawCalls_.clear();
     drawCalls2d_.clear();
 }
 
@@ -971,7 +936,7 @@ void VulkanContext::createTextureDescriptorSet() {
         .descriptorSetCount = static_cast<uint32_t>(layouts.size()),
         .pSetLayouts = layouts.data()};
 
-    blendDescriptorSets = device_.allocateDescriptorSets(allocInfo);
+    textureDescriptorSets = device_.allocateDescriptorSets(allocInfo);
 
     size_t index = 0;
     for (size_t i = 0; i < models_.size(); i++) {
@@ -983,7 +948,7 @@ void VulkanContext::createTextureDescriptorSet() {
                 .imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal};
 
             std::array writes{vk::WriteDescriptorSet{
-                .dstSet = blendDescriptorSets[index++],
+                .dstSet = textureDescriptorSets[index++],
                 .dstBinding = 0,
                 .dstArrayElement = 0,
                 .descriptorCount = 1,
@@ -1208,7 +1173,7 @@ std::vector<VkTexture> VulkanContext::createTexturesFromImages(
     vk::raii::CommandBuffer& commandBuffer,
     std::vector<vk::raii::Buffer>& stagingBuffers,
     std::vector<vk::raii::DeviceMemory>& stagingMemories,
-    const Model& model) {
+    const ModelData& model) {
     std::vector<VkTexture> textures;
 
     for (const auto& imageData : model.images_) {
@@ -1289,6 +1254,20 @@ VkModel VulkanContext::loadModel(const std::string& path) {
     return vkModel;
 }
 
+std::vector<SubDrawCall> VulkanContext::CreateSubDrawCallsForObject3d(
+    const Object& object) {
+    std::vector<SubDrawCall> subDrawCalls;
+
+    const auto& vkModel = models_[object.handle];
+
+    for (const auto& root : vkModel.rootNodes) {
+        ProcessNodes(root, object.transform.getModelMat(), vkModel,
+                     object.handle, subDrawCalls);
+    }
+
+    return subDrawCalls;
+}
+
 void VulkanContext::createDescriptorSet2d() {}
 
 void VulkanContext::createBindlessDescriptorSetLayout() {
@@ -1337,12 +1316,20 @@ void VulkanContext::createBindlessDescriptorSet() {
 void VulkanContext::DrawSprites(vk::raii::CommandBuffer& commandBuffer) {}
 
 void VulkanContext::DrawSprite(const Sprite& sprite) {
-    auto& vkSprite = sprites_.at(sprite.handle_);
+    auto& vkSprite = sprites_[sprite.handle_];
 
     drawCalls2d_.push_back({sprite.transform_.GetModelMat(),
                             vkSprite.hasTexture_, vkSprite.color_,
                             vkSprite.indicesCount_, *vkSprite.vertexBuffer_,
                             *vkSprite.indexBuffer_, *vkSprite.descriptorSet_});
+}
+
+void VulkanContext::DrawObject3d(const Object& obj) {
+    auto& vkModel = models_[obj.handle];
+    std::vector<SubDrawCall> materialsData = CreateSubDrawCallsForObject3d(obj);
+
+    drawCalls_.push_back(
+        {vkModel.vertexBuffer, vkModel.indexBuffer, materialsData});
 }
 
 void VulkanContext::CreateDescriptorSetForSprite(VkSprite& sprite) {
@@ -1390,6 +1377,31 @@ void VulkanContext::RenderDrawCalls2d(vk::raii::CommandBuffer& commandBuffer) {
     }
 }
 
+void VulkanContext::RenderDrawCalls3d(
+    const vk::raii::CommandBuffer& commandBuffer) {
+    for (const auto& [vertexBuffer, indexBuffer, materialData] : drawCalls_) {
+        commandBuffer.bindVertexBuffers(0, vertexBuffer, {0});
+        commandBuffer.bindIndexBuffer(indexBuffer, 0, vk::IndexType::eUint32);
+
+        for (const auto& subCall : materialData) {
+            commandBuffer.bindDescriptorSets(
+                vk::PipelineBindPoint::eGraphics, m_pipelineLayout, 1,
+                *textureDescriptorSets[subCall.textureIndex], nullptr);
+
+            commandBuffer.pushConstants<PushConstantObject3d>(
+                m_pipelineLayout, vk::ShaderStageFlagBits::eAllGraphics, 0,
+                PushConstantObject3d{
+                    subCall.mat,
+                    subCall.color,
+                    subCall.hasTexture,
+                });
+
+            commandBuffer.drawIndexed(subCall.indexCount, 1, subCall.firstIndex,
+                                      0, 0);
+        }
+    }
+}
+
 void VulkanContext::finishLoading() {
     createDescriptorSets();
     createTextureDescriptorSet();
@@ -1397,7 +1409,7 @@ void VulkanContext::finishLoading() {
     //  initImGui();
 }
 
-SpriteHandle VulkanContext::AddModel(const Model& model) {
+ObjectHandle VulkanContext::AddModelData(const ModelData& model) {
     VkModel vkModel;
     vk::raii::CommandBuffer commandBuffer = beginSingleTimeCommand();
     std::vector<vk::raii::Buffer> stagingBuffers;
@@ -1425,12 +1437,12 @@ SpriteHandle VulkanContext::AddModel(const Model& model) {
 
     endSingleTimeCommand(std::move(commandBuffer));
 
-    models_.emplace_back(std::move(vkModel));
+    models_[spriteHandle_] = std::move(vkModel);
 
-    return {static_cast<uint32_t>(models_.size() - 1)};
+    return spriteHandle_++;
 }
 
-SpriteHandle VulkanContext::AddSprite(const SpriteData& sprite) {
+SpriteHandle VulkanContext::AddSpriteData(const SpriteData& sprite) {
     VkSprite vkSprite;
     vk::raii::CommandBuffer commandBuffer = beginSingleTimeCommand();
 
@@ -1515,7 +1527,7 @@ VkTexture VulkanContext::CreateVkTextureFromImageData(
     return texture;
 }
 
-void VulkanContext::renderFrame(Scene& scene, EngineStats& stats) {
+void VulkanContext::renderFrame(EngineStats& stats) {
     auto fenceResult =
         device_.waitForFences(*drawFence[frameIndex], vk::True, UINT64_MAX);
     if (fenceResult != vk::Result::eSuccess) {
@@ -1544,7 +1556,7 @@ void VulkanContext::renderFrame(Scene& scene, EngineStats& stats) {
     device_.resetFences(*drawFence[frameIndex]);
     m_commandBuffer[frameIndex].reset();
 
-    recordCommandBuffer(imageIndex, scene, stats);
+    recordCommandBuffer(imageIndex, stats);
 
     vk::PipelineStageFlags waitDestinationStageMask(
         vk::PipelineStageFlagBits::eColorAttachmentOutput);
@@ -1620,18 +1632,6 @@ void VulkanContext::SetProj2dMatrix(const glm::mat4& m) {
 void VulkanContext::createTexture() {}
 
 uint32_t VulkanContext::loadAsset(const std::string& path) {
-    if (!std::filesystem::exists(path)) {
-        LOG_ERROR("file not found: {}", path);
-        throw std::runtime_error("file not found: " + path);
-    }
-
-    std::ifstream file(path);
-    if (!file) {
-        LOG_ERROR("Failed to open file: {}", path);
-        throw std::runtime_error("Failed to open file: " + path);
-    }
-
-    models_.push_back(loadModel(path));
     return models_.size() - 1;
 }
 

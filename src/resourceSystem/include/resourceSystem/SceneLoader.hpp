@@ -15,6 +15,5 @@ class SceneLoader {
 public:
     // TODO !!!!!!!!!!!!!!!!!OPTIMIZE IT!!!!!!!!!!!!
     static Scene LoadSceneFromJSON(std::string_view path);
-    // TODO !!!!!!!!!!!!!!!!!OPTIMIZE IT!!!!!!!!!!!!
     static SceneMeshData LoadSceneMeshData(const std::string& path);
 };

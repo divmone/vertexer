@@ -30,7 +30,7 @@ public:
     int GetHeight() const;
 
     NativeWindowHandler GetNativeHandler() const override;
-    [[deprecated]] std::vector<const char*> GetExtensionNames() const override;
+    [[deprecated]] const char* GetExtensionNames() const override;
     ExtentProvider GetExtentProvider() override;
 private:
     SDL_Window* window_;

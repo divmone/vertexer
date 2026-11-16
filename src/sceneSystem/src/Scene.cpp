@@ -5,7 +5,7 @@
 #include <sceneSystem/Scene.hpp>
 
 Object& Scene::AddObject(uint32_t idx, const std::string& name) {
-    objects_.push_back({.id = counter_++, .name = name, .modelIndex = idx});
+    objects_.push_back({.id = counter_++, .name = name, .handle = idx});
     return objects_.back();
 }
 

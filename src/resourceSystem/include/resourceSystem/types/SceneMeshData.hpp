@@ -6,5 +6,5 @@
 #include "Model.hpp"
 
 struct SceneMeshData {
-    std::vector<Model> models_;
+    std::unordered_map<std::string, ModelData> models_;
 };

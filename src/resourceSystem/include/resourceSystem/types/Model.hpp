@@ -9,7 +9,7 @@
 #include <typesSystem/MeshData.hpp>
 #include <typesSystem/Vertex3d.hpp>
 
-struct Model {
+struct ModelData {
     std::vector<Vertex3d> vertices_;
     std::vector<uint32_t> indices;
     std::vector<Mesh> meshes_;

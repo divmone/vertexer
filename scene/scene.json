@@ -18,7 +18,55 @@
           "y": 1,
           "z": 1
         },
-        "model": "../../../assets/クテミテミ.glb"
+        "model": "car"
+      },
+      {
+        "name": "STREET2",
+        "position": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "rotation": {
+          "x": 0,
+          "y": 90,
+          "z": 0
+        },
+        "scale": {
+          "x": 1,
+          "y": 1,
+          "z": 1
+        },
+        "model": "car"
+      },
+      {
+        "name": "STREET3",
+        "position": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "rotation": {
+          "x": 45,
+          "y": 0,
+          "z": 90
+        },
+        "scale": {
+          "x": 100,
+          "y": 100,
+          "z": 100
+        },
+        "model": "car2"
+      }
+    ],
+    "models": [
+      {
+        "name": "car",
+        "path": "../../../assets/クテミテミ.glb"
+      },
+      {
+        "name": "car2",
+        "path": "../../../assets/car.glb"
       }
     ]
   }

@@ -54,7 +54,9 @@ void App::Run() {
         Update(deltaTime);
 
         DrawSprites();
-        vulkanContext_.renderFrame(scene_, stats);
+        DrawScene();
+
+        vulkanContext_.renderFrame(stats);
 
         auto end = std::chrono::high_resolution_clock::now();
 
@@ -82,9 +84,11 @@ void App::Init() {
 void App::InitScene() {
     auto scenePath = FS::GetFullPath(FS::FileType::eScene, "scene");
     auto meshData = SceneLoader::LoadSceneMeshData(scenePath);
+    scene_ = SceneLoader::LoadSceneFromJSON(scenePath);
 
-    for (const auto& model : meshData.models_) {
-        vulkanContext_.AddModel(model);
+    for (auto& object : scene_.GetObjects()) {
+        object.handle =
+            vulkanContext_.AddModelData(meshData.models_[object.modelName]);
     }
 
     SpriteData spriteData;
@@ -104,7 +108,7 @@ void App::InitScene() {
         FS::GetFullPath(FS::FileType::eAsset, "test2.jpg"));
 
     Sprite sprite;
-    sprite.handle_ = vulkanContext_.AddSprite(spriteData);
+    sprite.handle_ = vulkanContext_.AddSpriteData(spriteData);
     sprite.transform_.pos_ = {500.0f, 500.0f};
     sprite.transform_.scale_ = {100.0f, 100.0f};
 
@@ -117,7 +121,7 @@ void App::InitScene() {
     Sprite sprite2;
     spriteData.image_ = AssetLoader::loadImageDataFromFile(
         FS::GetFullPath(FS::FileType::eAsset, "test.jpg"));
-    sprite2.handle_ = vulkanContext_.AddSprite(spriteData);
+    sprite2.handle_ = vulkanContext_.AddSpriteData(spriteData);
     sprite2.transform_.pos_ = {0.0f, 0.0f};
     sprite2.transform_.scale_ = {300.0f, 300.0f};
     sprites_.push_back(sprite);
@@ -125,8 +129,7 @@ void App::InitScene() {
     // TODO fix this bad code ↓ ↓ ↓ ↓ ↓ ↓
     vulkanContext_.finishLoading();
 
-    // TODO fix this bad code ↓ ↓ ↓ ↓ ↓ ↓
-    scene_ = SceneLoader::LoadSceneFromJSON(scenePath);
+    // TODO fix this bad code ↓ ↓ ↓ ↓ ↓
 }
 
 void App::Update(float deltaTime) {
@@ -170,5 +173,11 @@ void App::Update(float deltaTime) {
 void App::DrawSprites() {
     for (const auto& sprite : sprites_) {
         vulkanContext_.DrawSprite(sprite);
+    }
+}
+
+void App::DrawScene() {
+    for (const auto& obj : scene_.GetObjects()) {
+        vulkanContext_.DrawObject3d(obj);
     }
 }
