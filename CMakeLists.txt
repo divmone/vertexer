@@ -4,7 +4,9 @@ project(vertexer)
 set(CMAKE_CXX_STANDARD 23)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-    add_compile_options(-Wall -Wextra)
+    add_compile_options(-Wall -Wextra -Wreturn-type -Wpedantic
+            -Wconversion
+            -Wshadow)
 endif ()
 
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -march=native -mtune=native -flto -Ofast")

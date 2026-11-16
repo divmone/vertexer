@@ -97,7 +97,7 @@ NativeWindowHandler SDLWindow::GetNativeHandler() const {
     return GetNativeWindowHandler(window_);
 }
 
-std::vector<const char*> SDLWindow::GetExtensionNames() const {
+const char* SDLWindow::GetExtensionNames() const {
     // uint32_t sdlExtensionCount = 0;
     // auto sdlExtensions =
     // SDL_Vulkan_GetInstanceExtensions(&sdlExtensionCount); auto
@@ -114,6 +114,7 @@ std::vector<const char*> SDLWindow::GetExtensionNames() const {
     //                                  std::string(sdlExtensions[i]));
     //     }
     // }
+    return "";
 }
 
 ExtentProvider SDLWindow::GetExtentProvider() {

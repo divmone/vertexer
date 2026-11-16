@@ -2,14 +2,13 @@
 // Created by divmone on 7/23/2026.
 //
 
-#include <resourceSystem/AssetLoader.hpp>
-
 #include <fastgltf/core.hpp>
 #include <fastgltf/glm_element_traits.hpp>
 #include <fastgltf/tools.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <resourceSystem/AssetLoader.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <spdlog/spdlog.h>
@@ -58,7 +57,7 @@ glm::mat4 getNodeLocalMatrix(const fastgltf::Node& node) {
     return (minBounds + maxBounds) * 0.5f;
 }
 
-void processMeshes(const fastgltf::Asset& gltf, Model& model) {
+void processMeshes(const fastgltf::Asset& gltf, ModelData& model) {
     for (const auto& gltfMesh : gltf.meshes) {
         Mesh mesh;
         for (const auto& gltfPrimitive : gltfMesh.primitives) {
@@ -169,7 +168,7 @@ void processMeshes(const fastgltf::Asset& gltf, Model& model) {
     }
 }
 
-void processNodes(const fastgltf::Asset& gltf, Model& model) {
+void processNodes(const fastgltf::Asset& gltf, ModelData& model) {
     for (auto& gltfNode : gltf.nodes) {
         Node node;
         node.meshIndex =
@@ -245,7 +244,7 @@ ImageData decodeGltfImage(const fastgltf::Asset& gltf,
 }
 
 void processImages(const fastgltf::Asset& gltf,
-                   Model& model,
+                   ModelData& model,
                    const std::string& parentPath) {
     std::vector<std::future<ImageData>> futures;
     futures.reserve(gltf.images.size());
@@ -267,8 +266,8 @@ void processImages(const fastgltf::Asset& gltf,
 }
 }  // namespace
 
-Model AssetLoader::loadModelFromGltf(const std::string& pathToFile) {
-    Model model;
+ModelData AssetLoader::loadModelFromGltf(const std::string& pathToFile) {
+    ModelData model;
     fastgltf::Parser parser;
     auto gltfFile = fastgltf::GltfDataBuffer::FromPath(pathToFile);
 

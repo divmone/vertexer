@@ -36,4 +36,5 @@ private:
 
     std::vector<Sprite> sprites_;
     void DrawSprites();
+    void DrawScene();
 };

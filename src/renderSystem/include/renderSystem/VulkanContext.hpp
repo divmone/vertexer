@@ -19,6 +19,7 @@
 
 #include "resourceSystem/types/Sprite.hpp"
 #include "resourceSystem/types/SpriteData.hpp"
+#include "sceneSystem/types/Object.hpp"
 #include "types/Metadata.hpp"
 #include "types/VulkanSprite.hpp"
 
@@ -61,7 +62,7 @@ public:
                   const ExtentProvider& extentProvider);
     ~VulkanContext();
 
-    void renderFrame(Scene& scene, EngineStats& stats);
+    void renderFrame(EngineStats& stats);
 
     void recreateContext();
     void processMinimizedWindow();
@@ -73,11 +74,11 @@ public:
     uint32_t loadAsset(const std::string& path);
     void finishLoading();
 
-    SpriteHandle AddModel(const Model& model);
-    SpriteHandle AddSprite(const SpriteData& sprite);
+    ObjectHandle AddModelData(const ModelData& model);
+    SpriteHandle AddSpriteData(const SpriteData& sprite);
 
     void DrawSprite(const Sprite& sprite);
-
+    void DrawObject3d(const Object& obj);
 private:
     void initVulkan();
     void createInstance();
@@ -98,15 +99,16 @@ private:
     void createCommandPool();
     void createCommandBuffer();
 
-    void processNodes(unsigned root,
+    void ProcessNodes(unsigned root,
                       const glm::mat4& mat,
                       const VkModel& model,
-                      uint32_t modelIndex);
+                      uint32_t modelIndex,
+                      std::vector<SubDrawCall>& subDrawCalls);
     void drawBlendNodes(unsigned root,
                         const glm::mat4& mat,
                         const VkModel& model);
 
-    void recordCommandBuffer(uint32_t index, Scene& scene, EngineStats& stats);
+    void recordCommandBuffer(uint32_t index, EngineStats& stats);
     void createSyncObjects();
     void createUniformBuffers();
     void updateUniformBuffer(uint32_t index);
@@ -186,7 +188,7 @@ private:
     vk::Format depthFormat;
 
     std::vector<VkTexture> textures_;
-    std::vector<vk::raii::DescriptorSet> blendDescriptorSets;
+    std::vector<vk::raii::DescriptorSet> textureDescriptorSets;
     void createBlendDescriptorSetLayout();
     void createTextureDescriptorSet();
 
@@ -285,7 +287,7 @@ private:
         vk::raii::CommandBuffer& commandBuffer,
         std::vector<vk::raii::Buffer>& stagingBuffers,
         std::vector<vk::raii::DeviceMemory>& stagingMemories,
-        const Model& model);
+        const ModelData& model);
 
     VkTexture CreateVkTextureFromImageData(
         vk::raii::CommandBuffer& commandBuffer,
@@ -295,8 +297,11 @@ private:
 
     VkModel loadModel(const std::string& path);
 
-    std::vector<DrawCall> drawCalls;
-    std::vector<DrawCall> blendDrawCalls;
+    std::vector<DrawCall3d> drawCalls_;
+    std::vector<DrawCall3d> blendDrawCalls_;
+
+    std::vector<SubDrawCall> CreateSubDrawCallsForObject3d(
+        const Object& object);
 
     void createDescriptorSet2d();
     std::vector<vk::raii::DescriptorSet> descriptorSets2d_;
@@ -316,8 +321,10 @@ private:
 
     std::vector<DrawCall2d> drawCalls2d_;
     void RenderDrawCalls2d(vk::raii::CommandBuffer& commandBuffer);
+    void RenderDrawCalls3d(const vk::raii::CommandBuffer& commandBuffer);
 
-    std::vector<VkModel> models_;
+    std::unordered_map<SpriteHandle, VkModel> models_;
+    ObjectHandle objectHandle_{0};
 
     size_t texture2dIndex_{0};
 };

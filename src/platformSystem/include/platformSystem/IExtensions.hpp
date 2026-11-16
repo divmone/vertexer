@@ -12,5 +12,5 @@ struct ExtensionInfo {
 
 struct IExtensionNamesReader {
     virtual ~IExtensionNamesReader() = default;
-    virtual std::vector<const char*> GetExtensionNames() const = 0;
+    virtual const char* GetExtensionNames() const = 0;
 };

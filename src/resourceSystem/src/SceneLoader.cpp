@@ -62,6 +62,10 @@ Scene SceneLoader::LoadSceneFromJSON(std::string_view path) {
             if (jsonObj.contains("scale")) {
                 obj.transform.scale = convertJsonToVec3(jsonObj["scale"]);
             }
+
+            if (jsonObj.contains("model")) {
+                obj.modelName = jsonObj["model"].get<std::string>();
+            }
         }
     } catch (const json::parse_error& e) {
         LOG_ERROR(e.what());
@@ -78,13 +82,13 @@ SceneMeshData SceneLoader::LoadSceneMeshData(const std::string& path) {
     using nlohmann::json;
 
     if (!std::filesystem::exists(path)) {
-        LOG_ERROR("SCENE file not found: {}", path);
+        // LOG_ERROR("SCENE file not found: {}", path);
         throw std::runtime_error("SCENE file not found: " + path);
     }
 
     std::ifstream file(path);
     if (!file) {
-        LOG_ERROR("failed to load file: {}", path);
+        // LOG_ERROR("failed to load file: {}", path);
         throw std::runtime_error("failed to load file: " + path);
     }
 
@@ -96,19 +100,18 @@ SceneMeshData SceneLoader::LoadSceneMeshData(const std::string& path) {
 
         auto sceneObj = jsonScene["scene"];
 
-        for (auto& jsonObj : sceneObj["objects"]) {
-            if (jsonObj.contains("model")) {
+        if (sceneObj.contains("models")) {
+            for (auto& jsonObj : sceneObj["models"]) {
                 modelsCount++;
             }
-        }
 
-        meshData.models_.reserve(modelsCount);
+            meshData.models_.reserve(modelsCount);
 
-        for (auto& jsonObj : sceneObj["objects"]) {
-            if (jsonObj.contains("model")) {
+            for (auto& jsonObj : sceneObj["models"]) {
                 auto model = AssetLoader::loadModelFromGltf(
-                    jsonObj["model"].get<std::string>());
-                meshData.models_.emplace_back(std::move(model));
+                    jsonObj["path"].get<std::string>());
+                auto name = jsonObj["name"].get<std::string>();
+                meshData.models_[name] = std::move(model);
             }
         }
     } catch (const json::parse_error& e) {

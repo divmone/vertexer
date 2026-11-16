@@ -9,26 +9,15 @@
 #include <glm/gtc/quaternion.hpp>
 #include <string>
 
-struct Transform3d {
-    glm::vec3 pos{0.0};
-    glm::quat rotation{1.0, 0.0, 0.0, 0.0};
-    glm::vec3 scale{1.0, 1.0, 1.0};
-    glm::vec3 eulerAnglesDeg{0.0f};
+#include "typesSystem/Transform3d.hpp"
 
-    glm::mat4 getModelMat() const {
-        return glm::translate(glm::mat4(1.0f), pos) * glm::mat4_cast(rotation) *
-               glm::scale(glm::mat4(1.0), scale);
-    }
-
-    void rotate(glm::vec3 axis, float angle) {
-        rotation = glm::rotate(rotation, glm::radians(angle), axis);
-    }
-};
+using ObjectHandle = uint32_t;
 
 struct Object {
     size_t id;
     std::string name;
-    size_t modelIndex;
+    ObjectHandle handle;
     Transform3d transform;
     glm::vec3 color;
+    std::string modelName;
 };
