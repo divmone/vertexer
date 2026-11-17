@@ -8,3 +8,6 @@
 /out
 /tests/cmake-build-debug/
 /.vscode
+/.zed
+/.cache
+/compile_commands.json

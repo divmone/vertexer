@@ -19,11 +19,6 @@
 
 struct EngineStats;
 
-template <class... Ts>
-struct overloaded : Ts... {
-    using Ts::operator()...;
-};
-
 constexpr uint32_t MAX_BINDLESS_RESOURCES = 20000;
 
 VulkanContext::VulkanContext(NativeWindowHandler windowHandler,
@@ -554,6 +549,8 @@ void VulkanContext::drawBlendNodes(unsigned root,
                                    const glm::mat4& mat,
                                    const VkModel& model) {}
 
+
+/*
 void VulkanContext::recordCommandBuffer(uint32_t index,
                                         Scene& scene,
                                         EngineStats& stats) {
@@ -735,6 +732,73 @@ void VulkanContext::recordCommandBuffer(uint32_t index,
 
     drawCalls.clear();
     blendDrawCalls.clear();
+    drawCalls2d_.clear();
+}*/
+
+
+void VulkanContext::recordCommandBuffer2d(uint32_t imageIndex,
+                                          EngineStats& stats) {
+    stats.drawcallCount = 0;
+    stats.triangleCount = 0;
+
+    auto& cmd = m_commandBuffer[frameIndex];
+
+    cmd.begin({});
+
+    transition_image_layout(m_swapChainImages[imageIndex],
+                            vk::ImageLayout::eUndefined,
+                            vk::ImageLayout::eColorAttachmentOptimal, {},
+                            vk::AccessFlagBits2::eColorAttachmentWrite,
+                            vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+                            vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+                            vk::ImageAspectFlagBits::eColor);
+
+    vk::ClearValue clearValue = vk::ClearColorValue(0.0f, 0.0f, 0.9f, 1.0f);
+
+    vk::RenderingAttachmentInfo colorAttachment{
+        .imageView = m_swapChainImageViews[imageIndex],
+        .imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
+        .loadOp = vk::AttachmentLoadOp::eClear,
+        .storeOp = vk::AttachmentStoreOp::eStore,
+        .clearValue = clearValue};
+
+    vk::RenderingInfo renderingInfo{
+        .renderArea = {.offset = {.x = 0, .y = 0}, .extent = m_swapChainExtent},
+        .layerCount = 1,
+        .colorAttachmentCount = 1,
+        .pColorAttachments = &colorAttachment,
+        .pDepthAttachment = nullptr};
+
+    cmd.beginRendering(renderingInfo);
+
+    cmd.setViewport(0, vk::Viewport(
+        0.0f, 0.0f,
+        static_cast<float>(m_swapChainExtent.width),
+        static_cast<float>(m_swapChainExtent.height), 0.0f, 1.0f));
+    cmd.setScissor(0, vk::Rect2D(vk::Offset2D(0, 0), m_swapChainExtent));
+
+    cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, graphicsPipeline2d_);
+
+    RenderDrawCalls2d(cmd);
+
+    stats.drawcallCount = static_cast<uint32_t>(drawCalls2d_.size());
+    for (const auto& dc : drawCalls2d_) {
+        stats.triangleCount += dc.indexCount / 3;
+    }
+
+    cmd.endRendering();
+
+    // swapchain image: color attachment → present
+    transition_image_layout(m_swapChainImages[imageIndex],
+                            vk::ImageLayout::eColorAttachmentOptimal,
+                            vk::ImageLayout::ePresentSrcKHR,
+                            vk::AccessFlagBits2::eColorAttachmentWrite, {},
+                            vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+                            vk::PipelineStageFlagBits2::eBottomOfPipe,
+                            vk::ImageAspectFlagBits::eColor);
+
+    cmd.end();
+
     drawCalls2d_.clear();
 }
 
@@ -1334,15 +1398,80 @@ void VulkanContext::createBindlessDescriptorSet() {
     // device_.updateDescriptorSets(writes, {});
 }
 
-void VulkanContext::DrawSprites(vk::raii::CommandBuffer& commandBuffer) {}
+//void VulkanContext::DrawSprites(vk::raii::CommandBuffer& commandBuffer) {}
+
+void VulkanContext::DrawSprites(EngineStats& stats) {
+    auto fenceResult =
+        device_.waitForFences(*drawFence[frameIndex], vk::True, UINT64_MAX);
+    if (fenceResult != vk::Result::eSuccess) {
+        LOG_ERROR("failed to wait for fence!");
+        throw std::runtime_error("failed to wait for fence!");
+    }
+
+    auto [result, imageIndex] = m_swapchain.acquireNextImage(
+        UINT64_MAX, *presentCompleteSemaphore[frameIndex], nullptr);
+
+    if (result == vk::Result::eErrorOutOfDateKHR) {
+        recreateContext();
+        return;
+    }
+    if (result != vk::Result::eSuccess &&
+        result != vk::Result::eSuboptimalKHR) {
+        assert(result == vk::Result::eTimeout ||
+               result == vk::Result::eNotReady);
+        LOG_ERROR("failed to acquire swap chain image!");
+        throw std::runtime_error("failed to acquire swap chain image!");
+    }
+
+    device_.resetFences(*drawFence[frameIndex]);
+    m_commandBuffer[frameIndex].reset();
+
+    recordCommandBuffer2d(imageIndex, stats);
+
+    vk::PipelineStageFlags waitDestinationStageMask(
+        vk::PipelineStageFlagBits::eColorAttachmentOutput);
+
+    const vk::SubmitInfo submitInfo{
+        .waitSemaphoreCount = 1,
+        .pWaitSemaphores = &*presentCompleteSemaphore[frameIndex],
+        .pWaitDstStageMask = &waitDestinationStageMask,
+        .commandBufferCount = 1,
+        .pCommandBuffers = &*m_commandBuffer[frameIndex],
+        .signalSemaphoreCount = 1,
+        .pSignalSemaphores = &*renderFinishedSemaphore[imageIndex]};
+
+    m_graphicsQueue.submit(submitInfo, *drawFence[frameIndex]);
+
+    vk::PresentInfoKHR presentInfoKHR{
+        .waitSemaphoreCount = 1,
+        .pWaitSemaphores = &*renderFinishedSemaphore[imageIndex],
+        .swapchainCount = 1,
+        .pSwapchains = &*m_swapchain,
+        .pImageIndices = &imageIndex};
+
+    result = m_graphicsQueue.presentKHR(presentInfoKHR);
+    if ((result == vk::Result::eSuboptimalKHR) ||
+        (result == vk::Result::eErrorOutOfDateKHR)) {
+        recreateContext();
+    } else {
+        assert(result == vk::Result::eSuccess);
+    }
+    frameIndex = (frameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
+}
 
 void VulkanContext::DrawSprite(const Sprite& sprite) {
     auto& vkSprite = sprites_.at(sprite.handle_);
 
-    drawCalls2d_.push_back({sprite.transform_.GetModelMat(),
-                            vkSprite.hasTexture_, vkSprite.color_,
-                            vkSprite.indicesCount_, *vkSprite.vertexBuffer_,
-                            *vkSprite.indexBuffer_, *vkSprite.descriptorSet_});
+    drawCalls2d_.push_back({
+        .mat=sprite.transform_.GetModelMat(),                         
+        .hasTexture=vkSprite.hasTexture_, 
+        .color=vkSprite.color_,                       
+        .indexCount=vkSprite.indicesCount_, 
+        .vertexBuffer_=*vkSprite.vertexBuffer_,                         
+        .indexBuffer_=*vkSprite.indexBuffer_, 
+        .descriptorSet_=*vkSprite.descriptorSet_
+        }
+    );
 }
 
 void VulkanContext::CreateDescriptorSetForSprite(VkSprite& sprite) {
@@ -1515,6 +1644,7 @@ VkTexture VulkanContext::CreateVkTextureFromImageData(
     return texture;
 }
 
+/*
 void VulkanContext::renderFrame(Scene& scene, EngineStats& stats) {
     auto fenceResult =
         device_.waitForFences(*drawFence[frameIndex], vk::True, UINT64_MAX);
@@ -1575,7 +1705,7 @@ void VulkanContext::renderFrame(Scene& scene, EngineStats& stats) {
         assert(result == vk::Result::eSuccess);
     }
     frameIndex = (frameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
-}
+}*/
 
 void VulkanContext::processMinimizedWindow() {
     // int width = 0, height = 0;
