@@ -11,3 +11,5 @@
 /.zed
 /.cache
 /compile_commands.json
+/.openidea
+/logs
