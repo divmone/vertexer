@@ -77,7 +77,7 @@ public:
     SpriteHandle AddSprite(const SpriteData& sprite);
 
     void DrawSprite(const Sprite& sprite);
-
+    void DrawSprites(EngineStats& stats);
 private:
     void initVulkan();
     void createInstance();
@@ -106,7 +106,8 @@ private:
                         const glm::mat4& mat,
                         const VkModel& model);
 
-    void recordCommandBuffer(uint32_t index, Scene& scene, EngineStats& stats);
+    //void recordCommandBuffer(uint32_t index, Scene& scene, EngineStats& stats);
+    void recordCommandBuffer2d(uint32_t imageIndex, EngineStats& stats);
     void createSyncObjects();
     void createUniformBuffers();
     void updateUniformBuffer(uint32_t index);
@@ -310,7 +311,7 @@ private:
     std::unordered_map<SpriteHandle, VkSprite> sprites_;
     SpriteHandle spriteHandle_{0};
 
-    void DrawSprites(vk::raii::CommandBuffer& commandBuffer);
+    //void DrawSprites(vk::raii::CommandBuffer& commandBuffer);
 
     void CreateDescriptorSetForSprite(VkSprite& sprite);
 

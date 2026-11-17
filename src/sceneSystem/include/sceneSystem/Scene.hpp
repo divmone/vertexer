@@ -6,7 +6,6 @@
 #include <sceneSystem/types/Object.hpp>
 #include <vector>
 
-#include "../../../resourceSystem/include/resourceSystem/types/Model.hpp"
 
 class Scene {
 public:

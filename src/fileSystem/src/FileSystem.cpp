@@ -24,7 +24,7 @@
 std::string FS::GetFullPath(FileType type, std::string_view path) {
     std::filesystem::path fullPath{GetExePath()};
     fullPath = fullPath.parent_path();
-    fullPath /= "../../..";
+    fullPath /= "../../../";
 
     switch (type) {
         case FileType::eShader:
