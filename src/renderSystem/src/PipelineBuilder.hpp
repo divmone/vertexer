@@ -20,6 +20,7 @@ public:
     PipelineBuilder& colorFormat(vk::Format f);
     PipelineBuilder& depthFormat(vk::Format f);
     PipelineBuilder& blendingOn();
+    PipelineBuilder& premultipliedBlendingOn();
     PipelineBuilder& blendingOff();
     PipelineBuilder& depthTestOn();
     PipelineBuilder& depthTestOff();

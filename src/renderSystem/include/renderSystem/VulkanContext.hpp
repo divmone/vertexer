@@ -13,9 +13,13 @@
 #include <renderSystem/PSO.hpp>
 #include <renderSystem/types/DrawCall.hpp>
 #include <renderSystem/types/DrawCall2d.hpp>
+#include <renderSystem/types/UiDrawCall.hpp>
 #include <renderSystem/types/VulkanModel.hpp>
 #include <resourceSystem/types/Model.hpp>
 #include <vulkan/vulkan_raii.hpp>
+
+#include <memory>
+#include <span>
 
 #include "resourceSystem/types/Sprite.hpp"
 #include "resourceSystem/types/SpriteData.hpp"
@@ -76,9 +80,30 @@ public:
     SpriteHandle AddModel(const Model& model);
     SpriteHandle AddSprite(const SpriteData& sprite);
 
-    void DrawSprite(const Sprite& sprite);
+    void AddSpriteToPipeline(const Sprite& sprite);
     void DrawSprites(EngineStats& stats);
+
+    // --- RmlUi / 2D UI rendering ---
+    uint32_t AddUiGeometry(std::span<const Vertex2d> vertices,
+                           std::span<const uint32_t> indices);
+    void ReleaseUiGeometry(uint32_t geometryHandle);
+
+    uintptr_t AddUiTexture(const ImageData& image);
+    void ReleaseUiTexture(uintptr_t textureHandle);
+
+    uintptr_t CreateOffscreenTarget(uint32_t width, uint32_t height);
+    void RenderSpriteToOffscreen(SpriteHandle sprite, uintptr_t targetHandle);
+    std::pair<uint32_t, uint32_t> GetUiTextureSize(uintptr_t textureHandle) const;
+
+    void AddUiDrawCall(uint32_t geometryHandle,
+                       const glm::mat4& model,
+                       uintptr_t textureHandle,
+                       bool hasTexture,
+                       bool scissorEnabled,
+                       vk::Rect2D scissor);
+
 private:
+
     void initVulkan();
     void createInstance();
     void selectPhysicalDevice();
@@ -321,4 +346,27 @@ private:
     std::vector<VkModel> models_;
 
     size_t texture2dIndex_{0};
+
+    struct UiTextureEntry {
+        VkTexture texture;
+        vk::raii::DescriptorSet descriptorSet{nullptr};
+        uint32_t width{0};
+        uint32_t height{0};
+    };
+
+    struct UiGeometryEntry {
+        vk::raii::Buffer vertexBuffer_{nullptr};
+        vk::raii::DeviceMemory vertexBufferMemory_{nullptr};
+        vk::raii::Buffer indexBuffer_{nullptr};
+        vk::raii::DeviceMemory indexBufferMemory_{nullptr};
+        uint32_t indexCount{0};
+    };
+
+    vk::raii::DescriptorSet CreateUiTextureDescriptorSet(
+        const VkTexture& texture);
+    void RenderUiDrawCalls(vk::raii::CommandBuffer& commandBuffer);
+
+    std::vector<std::unique_ptr<UiTextureEntry>> uiTextures_;
+    std::vector<std::unique_ptr<UiGeometryEntry>> uiGeometries_;
+    std::vector<UiDrawCall> uiDrawCalls_;
 };

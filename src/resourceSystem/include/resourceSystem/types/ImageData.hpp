@@ -5,6 +5,7 @@
 #pragma once
 
 #include <stb_image.h>
+#include <cstdint>
 
 struct ImageData {
     ImageData() = default;

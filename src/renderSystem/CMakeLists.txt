@@ -8,7 +8,14 @@ find_package(glm REQUIRED)
 
 add_engine_module(
         renderSystem
-        include/renderSystem/VulkanContext.hpp src/VulkanContext.cpp
+        include/renderSystem/VulkanContext.hpp
+        src/VulkanContext.cpp
+        src/VulkanContextDevice.cpp
+        src/VulkanContextPipelines.cpp
+        src/VulkanContextResources.cpp
+        src/VulkanContextScene3D.cpp
+        src/VulkanContextSprites2D.cpp
+        src/VulkanContextUi.cpp
         src/PipelineBuilder.hpp src/PipelineBuilder.cpp
         include/renderSystem/PSO.hpp src/PSO.cpp
         include/renderSystem/types/Providers.hpp

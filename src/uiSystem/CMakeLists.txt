@@ -9,5 +9,13 @@ add_engine_module(uiSystem
     src/Core.cpp
 )
 
-target_link_libraries(uiSystem RmlUi::RmlUi Vulkan::Vulkan)
+target_link_libraries(uiSystem
+    RmlUi::RmlUi
+    Vulkan::Vulkan
+    renderSystem
+    resourceSystem
+    windowSystem
+    fileSystem
+    logSystem
+)
 

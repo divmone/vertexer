@@ -36,6 +36,22 @@ PipelineBuilder& PipelineBuilder::blendingOn() {
     return *this;
 }
 
+PipelineBuilder& PipelineBuilder::premultipliedBlendingOn() {
+    colorBlendAttachment_ = {
+        .blendEnable = vk::True,
+        .srcColorBlendFactor = vk::BlendFactor::eOne,
+        .dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha,
+        .colorBlendOp = vk::BlendOp::eAdd,
+        .srcAlphaBlendFactor = vk::BlendFactor::eOne,
+        .dstAlphaBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha,
+        .alphaBlendOp = vk::BlendOp::eAdd,
+        .colorWriteMask =
+            vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
+            vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA};
+
+    return *this;
+}
+
 PipelineBuilder& PipelineBuilder::blendingOff() {
     colorBlendAttachment_ = {.blendEnable = vk::False,
                              .colorWriteMask = vk::ColorComponentFlagBits::eR |
@@ -57,9 +73,9 @@ PipelineBuilder& PipelineBuilder::depthTestOn() {
 
 PipelineBuilder& PipelineBuilder::depthTestOff() {
     depthStencilStateInfo_ = {
-        .depthTestEnable = vk::True,
+        .depthTestEnable = vk::False,
         .depthWriteEnable = vk::False,
-        .depthCompareOp = vk::CompareOp::eLess,
+        .depthCompareOp = vk::CompareOp::eAlways,
     };
 
     return *this;
