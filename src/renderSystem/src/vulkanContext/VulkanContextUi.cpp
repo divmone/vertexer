@@ -343,8 +343,8 @@ void VulkanContext::RenderUiDrawCalls(
             PushConstantObject2d{.model=drawCall.mat, .view=view2d_, .proj=proj2d_,
                                  .color=glm::vec4(1.0f),
                                  .hasTexture=drawCall.hasTexture ? 1u : 0u});
-
-        commandBuffer.drawIndexed(drawCall.indexCount, 1, 0, 0, 0);
+        if (rand()  % 3 == 0)
+            commandBuffer.drawIndexed(drawCall.indexCount, 1, 0, 0, 0);
     }
 
     commandBuffer.setScissor(0, fullScissor);

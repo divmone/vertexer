@@ -54,7 +54,7 @@ void VulkanContext::RecordCommandBuffer2d(uint32_t imageIndex,
 
     cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, graphicsPipeline2d_);
 
-    RenderDrawCalls2d(cmd);
+   // RenderDrawCalls2d(cmd);
     RenderUiDrawCalls(cmd);
 
     stats.drawcallCount = static_cast<uint32_t>(drawCalls2d_.size() +

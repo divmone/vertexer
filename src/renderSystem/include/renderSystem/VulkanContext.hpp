@@ -63,7 +63,7 @@ struct UBObject {
 class VulkanContext {
 public:
     VulkanContext(const NativeWindowHandler& windowHandler,
-                  ExtentProvider             extentProvider);
+                        ExtentProvider       extentProvider);
     ~VulkanContext();
 
 #pragma region PublicApi

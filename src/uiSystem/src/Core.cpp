@@ -313,6 +313,7 @@ void UI::Update() {
     if (context_ != nullptr) {
         context_->Update();
     }
+    
 }
 
 void UI::Render() {

@@ -13,6 +13,8 @@ App::App()
       logger_("APP", true),
       window_("APP", 1200, 800, false),
       vulkanContext_(window_.GetNativeHandler(), window_.GetExtentProvider()) {
+
+    // не уверен насчёт этого всего
     window_.SetOnEvent([&](SDL_Event& e) {
         ui_.ProcessEvent(e);
 
@@ -26,24 +28,30 @@ App::App()
             vulkanContext_.RecreateContext();
             return;
         }
+        if (e.type == SDL_EVENT_QUIT) {
+
+        }
         if (e.type == SDL_EVENT_WINDOW_RESIZED ||
             e.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED) {
             vulkanContext_.RecreateContext();
         }
     });
+
     Init();
 }
 
 void App::Run() {
+    using namespace std::chrono;
+    using namespace std;
+
     EngineStats stats;
-    auto lastTime = std::chrono::high_resolution_clock::now();
+    auto lastTime = high_resolution_clock::now();
 
     while (isRunning_) {
         isRunning_ = window_.ProcessEvent();
 
-        auto now = std::chrono::high_resolution_clock::now();
-        float deltaTime =
-            std::chrono::duration<float>(now - lastTime).count();
+        auto now = high_resolution_clock::now();
+        float deltaTime = chrono::duration<float>(now - lastTime).count();
         lastTime = now;
 
         Update(deltaTime);
@@ -52,9 +60,8 @@ void App::Run() {
         ui_.Render();
         vulkanContext_.DrawSprites(stats);
 
-        auto end = std::chrono::high_resolution_clock::now();
-        auto elapsed =
-            std::chrono::duration_cast<std::chrono::microseconds>(end - now);
+        auto end = high_resolution_clock::now();
+        auto elapsed = std::chrono::duration_cast<microseconds>(end - now);
         stats.frameTime = elapsed.count() / 1000.0f;
 
         inputSystem_.EndFrame();
@@ -66,19 +73,18 @@ void App::Init() {
 
     // RmlUi uses a top-left origin. Vulkan's Y axis points down in NDC, so
     // bottom/top are intentionally passed in this order.
-    vulkanContext_.SetProj2dMatrix(glm::orthoZO(
-        0.0f, static_cast<float>(width), 0.0f,
-        static_cast<float>(height), 0.0f, 10.0f));
+    vulkanContext_.SetProj2dMatrix(
+        glm::orthoZO(
+            0.0f,
+            static_cast<float>(width),
+            0.0f,
+            static_cast<float>(height),
+            0.0f,
+            10.0f));
 
     ui_.Init(window_, vulkanContext_);
 }
 
 void App::Update(float deltaTime) const {
     (void)deltaTime;
-
-    if (inputSystem_.IsHeld(SDL_SCANCODE_ESCAPE)) {
-        SDL_Event e{};
-        e.type = SDL_EVENT_QUIT;
-        SDL_PushEvent(&e);
-    }
 }
