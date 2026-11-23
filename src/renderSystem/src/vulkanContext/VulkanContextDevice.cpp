@@ -191,8 +191,8 @@ void VulkanContext::CreateSwapchain() {
         .presentMode = ChooseSwapPresentMode(availablePresentModes),
         .clipped = true};
 
-    swapchain_ = vk::raii::SwapchainKHR(device_, swapchainCreateInfo);
-    swapChainImages_ = swapchain_.getImages();
+    swapChain_ = vk::raii::SwapchainKHR(device_, swapchainCreateInfo);
+    swapChainImages_ = swapChain_.getImages();
 }
 
 
@@ -261,7 +261,7 @@ void VulkanContext::CleanupSwapChain() {
     depthImageMemory_ = nullptr;
 
     swapChainImageViews_.clear();
-    swapchain_ = nullptr;
+    swapChain_ = nullptr;
 }
 
 

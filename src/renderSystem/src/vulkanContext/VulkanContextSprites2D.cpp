@@ -92,7 +92,7 @@ void VulkanContext::DrawSprites(EngineStats& stats) {
         throw std::runtime_error("failed to wait for fence!");
     }
 
-    auto [result, imageIndex] = swapchain_.acquireNextImage(
+    auto [result, imageIndex] = swapChain_.acquireNextImage(
         UINT64_MAX, *presentCompleteSemaphore_[frameIndex_], nullptr);
 
     if (result == vk::Result::eErrorOutOfDateKHR) {
@@ -129,7 +129,7 @@ void VulkanContext::DrawSprites(EngineStats& stats) {
         .waitSemaphoreCount = 1,
         .pWaitSemaphores = &*renderFinishedSemaphore_[imageIndex],
         .swapchainCount = 1,
-        .pSwapchains = &*swapchain_,
+        .pSwapchains = &*swapChain_,
         .pImageIndices = &imageIndex};
 
     result = graphicsQueue_.presentKHR(presentInfoKHR);
