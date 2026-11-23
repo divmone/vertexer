@@ -22,7 +22,7 @@
 #include <typesSystem/Vertex3d.hpp>
 
 namespace {
-glm::mat4 getNodeLocalMatrix(const fastgltf::Node& node) {
+glm::mat4 GetNodeLocalMatrix(const fastgltf::Node& node) {
     if (const auto* matrix =
             std::get_if<fastgltf::math::fmat4x4>(&node.transform)) {
         return glm::make_mat4(matrix->data());
@@ -41,7 +41,7 @@ glm::mat4 getNodeLocalMatrix(const fastgltf::Node& node) {
     return t * r * s;
 }
 
-[[maybe_unused]] glm::vec3 computeBoundsCenter(
+[[maybe_unused]] glm::vec3 ComputeBoundsCenter(
     const std::vector<Vertex3d>& vertices) {
     if (vertices.empty()) {
         return glm::vec3(0.0f);
@@ -58,7 +58,7 @@ glm::mat4 getNodeLocalMatrix(const fastgltf::Node& node) {
     return (minBounds + maxBounds) * 0.5f;
 }
 
-void processMeshes(const fastgltf::Asset& gltf, Model& model) {
+void ProcessMeshes(const fastgltf::Asset& gltf, Model& model) {
     for (const auto& gltfMesh : gltf.meshes) {
         Mesh mesh;
         for (const auto& gltfPrimitive : gltfMesh.primitives) {
@@ -101,12 +101,12 @@ void processMeshes(const fastgltf::Asset& gltf, Model& model) {
 
             const fastgltf::Accessor& accessor =
                 gltf.accessors[posIt->accessorIndex];
-            size_t initSizeVert = model.vertices_.size();
-            model.vertices_.resize(initSizeVert + accessor.count);
+            size_t initSizeVert = model.vertices.size();
+            model.vertices.resize(initSizeVert + accessor.count);
 
             fastgltf::iterateAccessorWithIndex<glm::vec3>(
                 gltf, accessor, [&](const glm::vec3& position, size_t index) {
-                    model.vertices_[index + initSizeVert].pos = position;
+                    model.vertices[index + initSizeVert].pos = position;
                 });
 
             auto normIt = gltfPrimitive.findAttribute("NORMAL");
@@ -116,11 +116,11 @@ void processMeshes(const fastgltf::Asset& gltf, Model& model) {
                 fastgltf::iterateAccessorWithIndex<glm::vec3>(
                     gltf, normAccessor,
                     [&](const glm::vec3& normal, size_t index) {
-                        model.vertices_[index + initSizeVert].normal = normal;
+                        model.vertices[index + initSizeVert].normal = normal;
                     });
             } else {
                 for (size_t i = 0; i < accessor.count; ++i) {
-                    model.vertices_[i + initSizeVert].normal =
+                    model.vertices[i + initSizeVert].normal =
                         glm::vec3(0.0f, 0.0f, 1.0f);
                 }
             }
@@ -132,12 +132,12 @@ void processMeshes(const fastgltf::Asset& gltf, Model& model) {
                 fastgltf::iterateAccessorWithIndex<glm::vec2>(
                     gltf, texCoordAccessor,
                     [&](const glm::vec2& texCoord, size_t index) {
-                        model.vertices_[index + initSizeVert].texCoord =
+                        model.vertices[index + initSizeVert].texCoord =
                             texCoord;
                     });
             } else {
                 for (size_t i = 0; i < accessor.count; ++i) {
-                    model.vertices_[i + initSizeVert].texCoord =
+                    model.vertices[i + initSizeVert].texCoord =
                         glm::vec2(0.0f, 0.0f);
                 }
             }
@@ -165,23 +165,23 @@ void processMeshes(const fastgltf::Asset& gltf, Model& model) {
             }
         }
 
-        model.meshes_.push_back(std::move(mesh));
+        model.meshes.push_back(std::move(mesh));
     }
 }
 
-void processNodes(const fastgltf::Asset& gltf, Model& model) {
+void ProcessNodes(const fastgltf::Asset& gltf, Model& model) {
     for (auto& gltfNode : gltf.nodes) {
         Node node;
         node.meshIndex =
             gltfNode.meshIndex.has_value() ? gltfNode.meshIndex.value() : -1;
-        node.transformation = getNodeLocalMatrix(gltfNode);
+        node.transformation = GetNodeLocalMatrix(gltfNode);
         node.children = std::vector<uint32_t>(gltfNode.children.begin(),
                                               gltfNode.children.end());
-        model.nodes_.push_back(std::move(node));
+        model.nodes.push_back(std::move(node));
     }
 }
 
-ImageData decodeGltfImage(const fastgltf::Asset& gltf,
+ImageData DecodeGltfImage(const fastgltf::Asset& gltf,
                           const fastgltf::Image& img,
                           const std::string& parentPath) {
     return std::visit(
@@ -197,7 +197,7 @@ ImageData decodeGltfImage(const fastgltf::Asset& gltf,
                 std::string relative(uri.uri.path().begin(),
                                      uri.uri.path().end());
                 std::string path = parentPath + "/" + relative;
-                return AssetLoader::loadImageDataFromFile(path);
+                return AssetLoader::LoadImageDataFromFile(path);
             },
             [](const fastgltf::sources::Array& arr) -> ImageData {
                 int x, y, n;
@@ -222,7 +222,7 @@ ImageData decodeGltfImage(const fastgltf::Asset& gltf,
                 const auto& bufferBytes =
                     std::get<fastgltf::sources::Array>(buffer.data);
 
-                const unsigned char* ptr =
+                const auto* ptr =
                     reinterpret_cast<const unsigned char*>(
                         bufferBytes.bytes.data() + bufferView.byteOffset);
 
@@ -234,17 +234,17 @@ ImageData decodeGltfImage(const fastgltf::Asset& gltf,
                     LOG_ERROR("failed to decode embedded image (BufferView)");
                     throw std::runtime_error("failed to decode embedded image");
                 }
-                ImageData img;
-                img.data = data;
-                img.width = x;
-                img.height = y;
-                img.channels = 4;
-                return img;
+                ImageData imageData;
+                imageData.data = data;
+                imageData.width = x;
+                imageData.height = y;
+                imageData.channels = 4;
+                return imageData;
             }},
         img.data);
 }
 
-void processImages(const fastgltf::Asset& gltf,
+void ProcessImages(const fastgltf::Asset& gltf,
                    Model& model,
                    const std::string& parentPath) {
     std::vector<std::future<ImageData>> futures;
@@ -253,7 +253,7 @@ void processImages(const fastgltf::Asset& gltf,
     for (const auto& img : gltf.images) {
         futures.push_back(std::async(
             std::launch::async, [&gltf, &img, &parentPath]() -> ImageData {
-                return decodeGltfImage(gltf, img, parentPath);
+                return DecodeGltfImage(gltf, img, parentPath);
             }));
     }
 
@@ -263,11 +263,11 @@ void processImages(const fastgltf::Asset& gltf,
         images.push_back(future.get());
     }
 
-    model.images_ = std::move(images);
+    model.images = std::move(images);
 }
 }  // namespace
 
-Model AssetLoader::loadModelFromGltf(const std::string& pathToFile) {
+Model AssetLoader::LoadModelFromGltf(const std::string& pathToFile) {
     Model model;
     fastgltf::Parser parser;
     auto gltfFile = fastgltf::GltfDataBuffer::FromPath(pathToFile);
@@ -299,19 +299,19 @@ Model AssetLoader::loadModelFromGltf(const std::string& pathToFile) {
     size_t sceneIndex = gltfAsset.defaultScene.value_or(0);
     const auto& scene = gltfAsset.scenes[sceneIndex];
 
-    processMeshes(gltfAsset, model);
-    processNodes(gltfAsset, model);
-    processImages(gltfAsset, model, parentPath);
+    ProcessMeshes(gltfAsset, model);
+    ProcessNodes(gltfAsset, model);
+    ProcessImages(gltfAsset, model, parentPath);
 
     for (auto rootNodeIndex : scene.nodeIndices) {
-        model.rootNodes_.push_back(rootNodeIndex);
+        model.rootNodes.push_back(rootNodeIndex);
     }
 
     LOG_INFO("Loaded model from file: {}", pathToFile);
     return model;
 }
 
-ImageData AssetLoader::loadImageDataFromFile(const std::string& pathToFile) {
+ImageData AssetLoader::LoadImageDataFromFile(const std::string& pathToFile) {
     int x, y, n;
     unsigned char* data =
         stbi_load(pathToFile.c_str(), &x, &y, &n, STBI_rgb_alpha);

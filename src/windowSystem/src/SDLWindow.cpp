@@ -21,9 +21,13 @@ SDLWindow::SDLWindow(const char* title,
         throw std::runtime_error("Failed to initialize SDL");
     }
 
-    const auto flags = isMaximize ? SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE |
-                                        SDL_WINDOW_MAXIMIZED
-                                  : SDL_WINDOW_RESIZABLE | SDL_WINDOW_VULKAN;
+    const auto flags = isMaximize
+        ?
+        SDL_WINDOW_VULKAN    |
+        SDL_WINDOW_RESIZABLE |
+        SDL_WINDOW_MAXIMIZED
+        :
+        SDL_WINDOW_RESIZABLE | SDL_WINDOW_VULKAN;
 
     window_ = SDL_CreateWindow(title_, width_, height_, flags);
 
@@ -114,11 +118,12 @@ std::vector<const char*> SDLWindow::GetExtensionNames() const {
     //                                  std::string(sdlExtensions[i]));
     //     }
     // }
+    return {};
 }
 
 ExtentProvider SDLWindow::GetExtentProvider() {
     ExtentProvider provider;
-    provider.GetExtentSizes = [&]() -> std::pair<std::uint32_t, std::uint32_t> {
+    provider.getExtentSizes = [&]() -> std::pair<std::uint32_t, std::uint32_t> {
         int width;
         int height;
         SDL_GetWindowSizeInPixels(window_, &width, &height);

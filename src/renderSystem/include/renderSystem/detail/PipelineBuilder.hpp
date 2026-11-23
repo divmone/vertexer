@@ -9,30 +9,30 @@
 class PipelineBuilder {
 public:
     template <typename T>
-    PipelineBuilder& vertexType() {
-        vertexInputBindingDescription_ = T::getBindingDescription();
-        auto attrs = T::getAttributeDescriptions();
+    PipelineBuilder& VertexType() {
+        vertexInputBindingDescription_ = T::GetBindingDescription();
+        auto attrs = T::GetAttributeDescriptions();
         vertexInputAttributeDescription_.assign(attrs.begin(), attrs.end());
         return *this;
     }
 
     PipelineBuilder& Layout(const vk::PipelineLayout& pipelineLayout);
-    PipelineBuilder& colorFormat(vk::Format f);
-    PipelineBuilder& depthFormat(vk::Format f);
-    PipelineBuilder& blendingOn();
-    PipelineBuilder& premultipliedBlendingOn();
-    PipelineBuilder& blendingOff();
-    PipelineBuilder& depthTestOn();
-    PipelineBuilder& depthTestOff();
-    PipelineBuilder& frontFace(vk::FrontFace f);
-    PipelineBuilder& cullMode(vk::CullModeFlags f);
+    PipelineBuilder& ColorFormat(vk::Format f);
+    PipelineBuilder& DepthFormat(vk::Format f);
+    PipelineBuilder& BlendingOn();
+    PipelineBuilder& PremultipliedBlendingOn();
+    PipelineBuilder& BlendingOff();
+    PipelineBuilder& DepthTestOn();
+    PipelineBuilder& DepthTestOff();
+    PipelineBuilder& FrontFace(vk::FrontFace f);
+    PipelineBuilder& CullMode(vk::CullModeFlags f);
 
-    PipelineBuilder& shaders(const vk::ShaderModule& shaderModule,
+    PipelineBuilder& Shaders(const vk::ShaderModule& shaderModule,
                              const char* vertName = "vertMain",
                              const char* fragName = "fragMain");
-    vk::raii::Pipeline build(const vk::raii::Device& device);
+    vk::raii::Pipeline Build(const vk::raii::Device& device);
 
-    static vk::raii::PipelineLayout createPipelineLayout(
+    static vk::raii::PipelineLayout CreatePipelineLayout(
         const vk::raii::Device& device,
         vk::ArrayProxy<const vk::PushConstantRange> ranges,
         vk::ArrayProxy<const vk::DescriptorSetLayout> layouts);

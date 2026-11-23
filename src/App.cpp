@@ -17,18 +17,18 @@ App::App()
         ui_.ProcessEvent(e);
 
         if (e.type == SDL_EVENT_KEY_DOWN) {
-            inputSystem_.onKeyDown(e.key.scancode);
+            inputSystem_.OnKeyDown(e.key.scancode);
         }
         if (e.type == SDL_EVENT_KEY_UP) {
-            inputSystem_.onKeyUp(e.key.scancode);
+            inputSystem_.OnKeyUp(e.key.scancode);
         }
         if (e.type == SDL_EVENT_WINDOW_MINIMIZED) {
-            vulkanContext_.recreateContext();
+            vulkanContext_.RecreateContext();
             return;
         }
         if (e.type == SDL_EVENT_WINDOW_RESIZED ||
             e.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED) {
-            vulkanContext_.recreateContext();
+            vulkanContext_.RecreateContext();
         }
     });
     Init();
@@ -57,12 +57,12 @@ void App::Run() {
             std::chrono::duration_cast<std::chrono::microseconds>(end - now);
         stats.frameTime = elapsed.count() / 1000.0f;
 
-        inputSystem_.endFrame();
+        inputSystem_.EndFrame();
     }
 }
 
 void App::Init() {
-    auto [width, height] = window_.GetExtentProvider().GetExtentSizes();
+    auto [width, height] = window_.GetExtentProvider().getExtentSizes();
 
     // RmlUi uses a top-left origin. Vulkan's Y axis points down in NDC, so
     // bottom/top are intentionally passed in this order.
@@ -73,10 +73,10 @@ void App::Init() {
     ui_.Init(window_, vulkanContext_);
 }
 
-void App::Update(float deltaTime) {
+void App::Update(float deltaTime) const {
     (void)deltaTime;
 
-    if (inputSystem_.isHeld(SDL_SCANCODE_ESCAPE)) {
+    if (inputSystem_.IsHeld(SDL_SCANCODE_ESCAPE)) {
         SDL_Event e{};
         e.type = SDL_EVENT_QUIT;
         SDL_PushEvent(&e);

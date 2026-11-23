@@ -2,7 +2,7 @@
 // Created by Антон Мухин on 07.11.2026.
 //
 
-#include "DescriptorSetLayoutBuilder.hpp"
+#include "renderSystem/detail/DescriptorSetLayoutBuilder.hpp"
 
 vk::raii::DescriptorSetLayout DescriptorSetLayoutBuilder::Build(
     const vk::raii::Device& device) {

@@ -10,7 +10,7 @@
 
 #include "resourceSystem/AssetLoader.hpp"
 
-glm::vec3 convertJsonToVec3(nlohmann::json& json) {
+glm::vec3 ConvertJsonToVec3(nlohmann::json& json) {
     glm::vec3 vec;
     vec.x = json["x"].get<float>();
     vec.y = json["y"].get<float>();
@@ -47,20 +47,20 @@ Scene SceneLoader::LoadSceneFromJSON(std::string_view path) {
             auto& obj = scene.AddObject(0 /*TODO*/, name);
 
             if (jsonObj.contains("position")) {
-                obj.transform.pos = convertJsonToVec3(jsonObj["position"]);
+                obj.transform.pos = ConvertJsonToVec3(jsonObj["position"]);
             }
 
             if (jsonObj.contains("rotation")) {
-                obj.transform.rotate({1, 0, 0},
-                                     convertJsonToVec3(jsonObj["rotation"]).x);
-                obj.transform.rotate({0, 1, 0},
-                                     convertJsonToVec3(jsonObj["rotation"]).y);
-                obj.transform.rotate({0, 0, 1},
-                                     convertJsonToVec3(jsonObj["rotation"]).z);
+                obj.transform.Rotate({1, 0, 0},
+                                     ConvertJsonToVec3(jsonObj["rotation"]).x);
+                obj.transform.Rotate({0, 1, 0},
+                                     ConvertJsonToVec3(jsonObj["rotation"]).y);
+                obj.transform.Rotate({0, 0, 1},
+                                     ConvertJsonToVec3(jsonObj["rotation"]).z);
             }
 
             if (jsonObj.contains("scale")) {
-                obj.transform.scale = convertJsonToVec3(jsonObj["scale"]);
+                obj.transform.scale = ConvertJsonToVec3(jsonObj["scale"]);
             }
         }
     } catch (const json::parse_error& e) {
@@ -102,13 +102,13 @@ SceneMeshData SceneLoader::LoadSceneMeshData(const std::string& path) {
             }
         }
 
-        meshData.models_.reserve(modelsCount);
+        meshData.models.reserve(modelsCount);
 
         for (auto& jsonObj : sceneObj["objects"]) {
             if (jsonObj.contains("model")) {
-                auto model = AssetLoader::loadModelFromGltf(
+                auto model = AssetLoader::LoadModelFromGltf(
                     jsonObj["model"].get<std::string>());
-                meshData.models_.emplace_back(std::move(model));
+                meshData.models.emplace_back(std::move(model));
             }
         }
     } catch (const json::parse_error& e) {

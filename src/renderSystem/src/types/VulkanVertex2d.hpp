@@ -5,14 +5,14 @@
 #pragma once
 
 struct VulkanVertex2d {
-    static vk::VertexInputBindingDescription getBindingDescription() {
+    static vk::VertexInputBindingDescription GetBindingDescription() {
         return {.binding = 0,
                 .stride = sizeof(Vertex2d),
                 .inputRate = vk::VertexInputRate::eVertex};
     }
 
     static std::array<vk::VertexInputAttributeDescription, 3>
-    getAttributeDescriptions() {
+        GetAttributeDescriptions() {
         return {{{.location = 0,
                   .binding = 0,
                   .format = vk::Format::eR32G32Sfloat,

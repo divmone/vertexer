@@ -1,3 +1,5 @@
+#pragma once
+
 struct Transform2d {
     glm::vec2 pos_{0.0f};
     glm::vec2 scale_{1.0f};

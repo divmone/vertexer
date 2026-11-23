@@ -7,29 +7,26 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtx/norm.hpp>
+#include <memory>
 #include <platformSystem/IExtentProvider.hpp>
 #include <platformSystem/NativeWindowHandler.hpp>
-#include <renderSystem/PSO.hpp>
 #include <renderSystem/types/DrawCall.hpp>
 #include <renderSystem/types/DrawCall2d.hpp>
 #include <renderSystem/types/UiDrawCall.hpp>
 #include <renderSystem/types/VulkanModel.hpp>
 #include <resourceSystem/types/Model.hpp>
-#include <vulkan/vulkan_raii.hpp>
-
-#include <memory>
 #include <span>
+#include <vulkan/vulkan_raii.hpp>
 
 #include "resourceSystem/types/Sprite.hpp"
 #include "resourceSystem/types/SpriteData.hpp"
-#include "types/Metadata.hpp"
 #include "types/VulkanSprite.hpp"
 
 struct EngineStats;
 class Scene;
 
-constexpr int MAX_FRAMES_IN_FLIGHT = 2;
+static constexpr int MAX_FRAMES_IN_FLIGHT{2};
+static constexpr int MAX_BINDLESS_RESOURCES{20000};
 
 struct PushConstantObject3d {
     alignas(16) glm::mat4 model;
@@ -61,21 +58,21 @@ struct UBObject {
 
 class VulkanContext {
 public:
-    VulkanContext(NativeWindowHandler windowHandler,
-                  const ExtentProvider& extentProvider);
+    VulkanContext(const NativeWindowHandler& windowHandler,
+                  ExtentProvider             extentProvider);
     ~VulkanContext();
 
-    void renderFrame(Scene& scene, EngineStats& stats);
+    void RenderFrame(Scene& scene, EngineStats& stats);
 
-    void recreateContext();
-    void processMinimizedWindow();
+    void RecreateContext();
+    void ProcessMinimizedWindow();
 
-    void setViewMatrix(const glm::mat4&);
-    void setProjMatrix(const glm::mat4&);
+    void SetViewMatrix(const glm::mat4&);
+    void SetProjMatrix(const glm::mat4&);
     void SetProj2dMatrix(const glm::mat4&);
 
-    uint32_t loadAsset(const std::string& path);
-    void finishLoading();
+    uint32_t LoadAsset(const std::string& path);
+    void     FinishLoading();
 
     SpriteHandle AddModel(const Model& model);
     SpriteHandle AddSprite(const SpriteData& sprite);
@@ -86,214 +83,220 @@ public:
     // --- RmlUi / 2D UI rendering ---
     uint32_t AddUiGeometry(std::span<const Vertex2d> vertices,
                            std::span<const uint32_t> indices);
-    void ReleaseUiGeometry(uint32_t geometryHandle);
+    void     ReleaseUiGeometry(uint32_t geometryHandle);
 
     uintptr_t AddUiTexture(const ImageData& image);
-    void ReleaseUiTexture(uintptr_t textureHandle);
+    void      ReleaseUiTexture(uintptr_t textureHandle);
 
     uintptr_t CreateOffscreenTarget(uint32_t width, uint32_t height);
     void RenderSpriteToOffscreen(SpriteHandle sprite, uintptr_t targetHandle);
-    std::pair<uint32_t, uint32_t> GetUiTextureSize(uintptr_t textureHandle) const;
+    std::pair<uint32_t, uint32_t> GetUiTextureSize(
+        uintptr_t textureHandle) const;
 
-    void AddUiDrawCall(uint32_t geometryHandle,
+    void AddUiDrawCall(uint32_t         geometryHandle,
                        const glm::mat4& model,
-                       uintptr_t textureHandle,
-                       bool hasTexture,
-                       bool scissorEnabled,
-                       vk::Rect2D scissor);
+                       uintptr_t        textureHandle,
+                       bool             hasTexture,
+                       bool             scissorEnabled,
+                       vk::Rect2D       scissor);
 
 private:
+    void InitVulkan();
+    void CreateInstance();
+    void SelectPhysicalDevice();
+    void CreateLogicalDevice();
+    void CreateSurface();
+    void CreateSwapchain();
+    void CreateImageViews();
 
-    void initVulkan();
-    void createInstance();
-    void selectPhysicalDevice();
-    void createLogicalDevice();
-    void createSurface();
-    void createSwapchain();
-    void createImageViews();
+    void CreateDescriptorSetLayout();
+    void CreateDescriptorSetLayout2d();
 
-    void createDescriptorSetLayout();
-    void createDescriptorSetLayout2d();
-
-    void createGraphicsPipeline();
+    void CreateGraphicsPipeline();
     void CreateGraphicsPipeline2d();
 
-    void createBlendingPipeline();
+    void CreateBlendingPipeline();
 
-    void createCommandPool();
-    void createCommandBuffer();
+    void CreateCommandPool();
+    void CreateCommandBuffer();
 
-    void processNodes(unsigned root,
+    void ProcessNodes(unsigned         root,
                       const glm::mat4& mat,
-                      const VkModel& model,
-                      uint32_t modelIndex);
-    void drawBlendNodes(unsigned root,
+                      const VkModel&   model,
+                      uint32_t         modelIndex);
+    void DrawBlendNodes(unsigned         root,
                         const glm::mat4& mat,
-                        const VkModel& model);
+                        const VkModel&   model);
 
-    //void recordCommandBuffer(uint32_t index, Scene& scene, EngineStats& stats);
-    void recordCommandBuffer2d(uint32_t imageIndex, EngineStats& stats);
-    void createSyncObjects();
-    void createUniformBuffers();
-    void updateUniformBuffer(uint32_t index);
+    // void recordCommandBuffer(uint32_t index, Scene& scene, EngineStats&
+    // stats);
+    void RecordCommandBuffer2d(uint32_t imageIndex, EngineStats& stats);
+    void CreateSyncObjects();
+    void CreateUniformBuffers();
+    void UpdateUniformBuffer(uint32_t index) const;
 
-    void createDescriptorSets();
-    void createDepthResources();
+    void CreateDescriptorSets();
+    void CreateDepthResources();
 
-    uint32_t findMemoryType(uint32_t typeFilter,
-                            vk::MemoryPropertyFlags properties);
-    void copyBufferToImage(vk::raii::CommandBuffer& commandBuffer,
-                           const vk::raii::Buffer& buffer,
-                           vk::raii::Image& image,
-                           uint32_t width,
-                           uint32_t height);
+    uint32_t FindMemoryType(uint32_t                typeFilter,
+                            vk::MemoryPropertyFlags properties) const;
+    void     CopyBufferToImage(vk::raii::CommandBuffer& commandBuffer,
+                               const vk::raii::Buffer&  buffer,
+                               vk::raii::Image&         image,
+                               uint32_t                 width,
+                               uint32_t                 height);
 
     // SDL_Window* m_window{nullptr};
     int width_{0};
     int height_{0};
 
     NativeWindowHandler nativeWindowHandler_;
-    ExtentProvider extentProvider_;
+    ExtentProvider      extentProvider_;
 
-    vk::raii::Context m_context;
-    vk::raii::Instance instance_{nullptr};
-    vk::raii::PhysicalDevice m_physicalDevice{nullptr};
-    vk::raii::Device device_{nullptr};
-    vk::raii::Queue m_graphicsQueue{nullptr};
+    vk::raii::Context        context_;
+    vk::raii::Instance       instance_{nullptr};
+    vk::raii::PhysicalDevice physicalDevice_{nullptr};
+    vk::raii::Device         device_{nullptr};
+    vk::raii::Queue          graphicsQueue_{nullptr};
 
-    vk::raii::SurfaceKHR m_surfaceKHR{nullptr};
+    vk::raii::SurfaceKHR surfaceKHR_{nullptr};
 
-    vk::raii::SwapchainKHR m_swapchain{nullptr};
-    std::vector<vk::Image> m_swapChainImages{nullptr};
-    ;
-    vk::SurfaceFormatKHR m_swapChainSurfaceFormat;
-    vk::Extent2D m_swapChainExtent;
-    std::vector<vk::raii::ImageView> m_swapChainImageViews;
+    vk::raii::SwapchainKHR swapchain_{nullptr};
+    std::vector<vk::Image> swapChainImages_{nullptr};
+
+    vk::SurfaceFormatKHR             swapChainSurfaceFormat_;
+    vk::Extent2D                     swapChainExtent_;
+    std::vector<vk::raii::ImageView> swapChainImageViews_;
 
     vk::raii::DescriptorSetLayout descriptorSetLayout3d_{nullptr};
     vk::raii::DescriptorSetLayout blendingDescriptorSetLayout_{nullptr};
     vk::raii::DescriptorSetLayout descriptorSetLayout2d_{nullptr};
 
-    vk::raii::Pipeline graphicsPipeline_{nullptr};
-    vk::raii::PipelineLayout m_pipelineLayout{nullptr};
+    vk::raii::Pipeline       graphicsPipeline_{nullptr};
+    vk::raii::PipelineLayout pipelineLayout_{nullptr};
 
-    vk::raii::Pipeline graphicsPipeline2d_{nullptr};
+    vk::raii::Pipeline       graphicsPipeline2d_{nullptr};
     vk::raii::PipelineLayout pipelineLayout2d_{nullptr};
 
-    vk::raii::Pipeline blendingPipeline{nullptr};
+    vk::raii::Pipeline blendingPipeline_{nullptr};
 
-    vk::raii::PipelineLayout skyPipelineLayout{nullptr};
-    vk::raii::Pipeline skyPipeline{nullptr};
+    vk::raii::PipelineLayout skyPipelineLayout_{nullptr};
+    vk::raii::Pipeline       skyPipeline_{nullptr};
 
-    vk::raii::CommandPool m_commandPool{nullptr};
-    uint32_t queueFamilyIndex{0};
-    std::vector<vk::raii::CommandBuffer> m_commandBuffer;
-    std::vector<vk::raii::Semaphore> presentCompleteSemaphore;
-    std::vector<vk::raii::Semaphore> renderFinishedSemaphore;
-    std::vector<vk::raii::Fence> drawFence;
+    vk::raii::CommandPool                commandPool_{nullptr};
+    uint32_t                             queueFamilyIndex_{0};
+    std::vector<vk::raii::CommandBuffer> commandBuffer_;
+    std::vector<vk::raii::Semaphore>     presentCompleteSemaphore_;
+    std::vector<vk::raii::Semaphore>     renderFinishedSemaphore_;
+    std::vector<vk::raii::Fence>         drawFence_;
 
-    uint32_t frameIndex{0};
-    std::vector<vk::raii::Buffer> uniformBuffers;
-    std::vector<vk::raii::DeviceMemory> uniformDevicesMemory;
-    std::vector<void*> uniformBuffersMapped;
+    uint32_t                            frameIndex_{0};
+    std::vector<vk::raii::Buffer>       uniformBuffers_;
+    std::vector<vk::raii::DeviceMemory> uniformDevicesMemory_;
+    std::vector<void*>                  uniformBuffersMapped_;
 
     vk::raii::DescriptorPool generalDescriptorPool_{nullptr};
     vk::raii::DescriptorPool bindlessDescriptorPool_{nullptr};
-    void createDescriptorPool();
-    void createBindlessDescriptorPool();
+    void                     CreateDescriptorPool();
+    void                     CreateBindlessDescriptorPool();
 
-    vk::raii::DescriptorPool imguiDescriptorPool{nullptr};
+    vk::raii::DescriptorPool imguiDescriptorPool_{nullptr};
 
-    std::vector<vk::raii::DescriptorSet> descriptorSets;
+    std::vector<vk::raii::DescriptorSet> descriptorSets_;
 
-    vk::raii::Image depthImage{nullptr};
-    vk::raii::DeviceMemory depthImageMemory{nullptr};
-    vk::raii::ImageView depthImageView{nullptr};
-    vk::Format depthFormat;
+    vk::raii::Image depthImage_{nullptr};
+    vk::raii::DeviceMemory depthImageMemory_{nullptr};
+    vk::raii::ImageView depthImageView_{nullptr};
+    vk::Format depthFormat_;
 
     std::vector<VkTexture> textures_;
-    std::vector<vk::raii::DescriptorSet> blendDescriptorSets;
-    void createBlendDescriptorSetLayout();
-    void createTextureDescriptorSet();
+    std::vector<vk::raii::DescriptorSet> blendDescriptorSets_;
+    void CreateBlendDescriptorSetLayout();
+    void CreateTextureDescriptorSet();
 
-    uint32_t textureCounter{0};
-    void createTexture();
-    vk::Extent2D chooseSwapExtent(
+    uint32_t     textureCounter_{0};
+    void         CreateTexture();
+    vk::Extent2D ChooseSwapExtent(
         const vk::SurfaceCapabilitiesKHR& capabilities);
 
-    vk::raii::ShaderModule createShaderModule(const std::vector<char>& code);
+    vk::raii::ShaderModule CreateShaderModule(
+        const std::vector<char>& code) const;
 
-    static vk::SurfaceFormatKHR chooseSwapSurfaceFormat(
+    static vk::SurfaceFormatKHR ChooseSwapSurfaceFormat(
         const std::vector<vk::SurfaceFormatKHR>& availableFormats);
 
-    static vk::PresentModeKHR chooseSwapPresentMode(
+    static vk::PresentModeKHR ChooseSwapPresentMode(
         const std::vector<vk::PresentModeKHR>& availablePresentModes);
 
-    static uint32_t chooseSwapMinImageCount(
+    static uint32_t ChooseSwapMinImageCount(
         const vk::SurfaceCapabilitiesKHR& surfaceCapabilities);
 
-    static std::vector<char> loadShader(const std::string& filename);
+    static std::vector<char> LoadShader(const std::string& filename);
 
-    void transition_image_layout(vk::Image image,
-                                 vk::ImageLayout old_layout,
-                                 vk::ImageLayout new_layout,
-                                 vk::AccessFlags2 src_access_mask,
-                                 vk::AccessFlags2 dst_access_mask,
-                                 vk::PipelineStageFlags2 src_stage_mask,
-                                 vk::PipelineStageFlags2 dst_stage_mask,
-                                 vk::ImageAspectFlags image_aspect_flags);
+    void TransitionImageLayout(vk::Image image,
+                                 vk::ImageLayout         oldLayout,
+                                 vk::ImageLayout         newLayout,
+                                 vk::AccessFlags2        srcAccessMask,
+                                 vk::AccessFlags2        dstAccessMask,
+                                 vk::PipelineStageFlags2 srcStageMask,
+                                 vk::PipelineStageFlags2 dstStageMask,
+                                 vk::ImageAspectFlags imageAspectFlags) const;
 
-    void transitionImageLayout(vk::raii::CommandBuffer& commandBuffer,
-                               const vk::raii::Image& image,
-                               vk::ImageLayout oldLayout,
-                               vk::ImageLayout newLayout);
+    void TransitionImageLayout(vk::raii::CommandBuffer& commandBuffer,
+                               const vk::raii::Image&   image,
+                               vk::ImageLayout          oldLayout,
+                               vk::ImageLayout          newLayout);
 
-    std::pair<vk::raii::Image, vk::raii::DeviceMemory> createImage(
-        uint32_t width,
-        uint32_t height,
-        vk::Format format,
-        vk::ImageTiling tiling,
-        vk::ImageUsageFlags usage,
-        vk::MemoryPropertyFlags properties);
-    vk::raii::ImageView createImageView(const vk::Image& image,
-                                        vk::Format format,
-                                        vk::ImageAspectFlags aspectFlags);
-    std::pair<vk::raii::Buffer, vk::raii::DeviceMemory> createBuffer(
-        vk::DeviceSize size,
-        vk::BufferUsageFlags usage,
+    std::pair<vk::raii::Image, vk::raii::DeviceMemory> CreateImage(
+        uint32_t                width,
+        uint32_t                height,
+        vk::Format              format,
+        vk::ImageTiling         tiling,
+        vk::ImageUsageFlags     usage,
         vk::MemoryPropertyFlags properties);
 
-    vk::raii::CommandBuffer beginSingleTimeCommand();
-    void endSingleTimeCommand(vk::raii::CommandBuffer&& commandBuffer) const;
+    vk::raii::ImageView CreateImageView(const vk::Image&     image,
+                                        vk::Format           format,
+                                        vk::ImageAspectFlags aspectFlags) const;
 
-    vk::Format findSupportedFormat(const std::vector<vk::Format>& candidates,
-                                   vk::ImageTiling tiling,
+    std::pair<vk::raii::Buffer, vk::raii::DeviceMemory> CreateBuffer(
+        vk::DeviceSize          size,
+        vk::BufferUsageFlags    usage,
+        vk::MemoryPropertyFlags properties) const;
+
+    vk::raii::CommandBuffer BeginSingleTimeCommand() const;
+    void EndSingleTimeCommand(vk::raii::CommandBuffer&& commandBuffer) const;
+
+    vk::Format FindSupportedFormat(const std::vector<vk::Format>& candidates,
+                                   vk::ImageTiling                tiling,
                                    vk::FormatFeatureFlags features) const;
-    vk::Format findDepthFormat();
+    vk::Format FindDepthFormat() const;
 
-    void cleanupSwapChain();
+    void CleanupSwapChain();
 
     template <typename T>
-    std::pair<vk::raii::Buffer, vk::raii::DeviceMemory> createUniversalBuffer(
-        vk::raii::CommandBuffer& commandBuffer,
-        std::vector<vk::raii::Buffer>& stagingBuffersKeepAlive,
+    std::pair<vk::raii::Buffer, vk::raii::DeviceMemory> CreateUniversalBuffer(
+        vk::raii::CommandBuffer&             commandBuffer,
+        std::vector<vk::raii::Buffer>&       stagingBuffersKeepAlive,
         std::vector<vk::raii::DeviceMemory>& stagingMemoriesKeepAlive,
-        const std::span<const T>& arr,
-        vk::BufferUsageFlagBits flag) {
+        const std::span<const T>&            arr,
+        vk::BufferUsageFlagBits              flag) {
         vk::DeviceSize bufferSize = arr.size() * sizeof(arr[0]);
         auto [stagingBuffer, stagingDeviceMemory] =
-            createBuffer(bufferSize, vk::BufferUsageFlagBits::eTransferSrc,
+            CreateBuffer(bufferSize,
+                         vk::BufferUsageFlagBits::eTransferSrc,
                          vk::MemoryPropertyFlagBits::eHostVisible |
                              vk::MemoryPropertyFlagBits::eHostCoherent);
         void* data = stagingDeviceMemory.mapMemory(0, bufferSize);
         memcpy(data, arr.data(), bufferSize);
         stagingDeviceMemory.unmapMemory();
 
-        auto [buffer, bufferMemory] = createBuffer(
-            bufferSize, flag | vk::BufferUsageFlagBits::eTransferDst,
-            vk::MemoryPropertyFlagBits::eDeviceLocal);
-        commandBuffer.copyBuffer(*stagingBuffer, *buffer,
-                                 vk::BufferCopy{.size = bufferSize});
+        auto [buffer, bufferMemory] =
+            CreateBuffer(bufferSize,
+                         flag | vk::BufferUsageFlagBits::eTransferDst,
+                         vk::MemoryPropertyFlagBits::eDeviceLocal);
+        commandBuffer.copyBuffer(
+            *stagingBuffer, *buffer, vk::BufferCopy{.size = bufferSize});
 
         stagingBuffersKeepAlive.push_back(std::move(stagingBuffer));
         stagingMemoriesKeepAlive.push_back(std::move(stagingDeviceMemory));
@@ -307,66 +310,66 @@ private:
     glm::mat4 view2d_{1.0f};
     glm::mat4 proj2d_;
 
-    std::vector<VkTexture> createTexturesFromImages(
-        vk::raii::CommandBuffer& commandBuffer,
-        std::vector<vk::raii::Buffer>& stagingBuffers,
+    std::vector<VkTexture> CreateTexturesFromImages(
+        vk::raii::CommandBuffer&             commandBuffer,
+        std::vector<vk::raii::Buffer>&       stagingBuffers,
         std::vector<vk::raii::DeviceMemory>& stagingMemories,
-        const Model& model);
+        const Model&                         model);
 
     VkTexture CreateVkTextureFromImageData(
-        vk::raii::CommandBuffer& commandBuffer,
-        std::vector<vk::raii::Buffer>& stagingBuffers,
+        vk::raii::CommandBuffer&             commandBuffer,
+        std::vector<vk::raii::Buffer>&       stagingBuffers,
         std::vector<vk::raii::DeviceMemory>& stagingMemories,
-        const ImageData& imageData);
+        const ImageData&                     imageData);
 
-    VkModel loadModel(const std::string& path);
+    VkModel LoadModel(const std::string& path);
 
-    std::vector<DrawCall> drawCalls;
-    std::vector<DrawCall> blendDrawCalls;
+    std::vector<DrawCall> drawCalls_;
+    std::vector<DrawCall> blendDrawCalls_;
 
-    void createDescriptorSet2d();
+    void CreateDescriptorSet2d();
     std::vector<vk::raii::DescriptorSet> descriptorSets2d_;
 
     vk::raii::DescriptorSetLayout bindlessDescriptorSetLayout_{nullptr};
-    vk::raii::DescriptorSet bindlessDescriptorSet_{nullptr};
+    vk::raii::DescriptorSet       bindlessDescriptorSet_{nullptr};
 
-    void createBindlessDescriptorSetLayout();
-    void createBindlessDescriptorSet();
+    void CreateBindlessDescriptorSetLayout();
+    void CreateBindlessDescriptorSet();
 
     std::unordered_map<SpriteHandle, VkSprite> sprites_;
-    SpriteHandle spriteHandle_{0};
+    SpriteHandle                               spriteHandle_{0};
 
-    //void DrawSprites(vk::raii::CommandBuffer& commandBuffer);
+    // void DrawSprites(vk::raii::CommandBuffer& commandBuffer);
 
-    void CreateDescriptorSetForSprite(VkSprite& sprite);
+    void CreateDescriptorSetForSprite(VkSprite& sprite) const;
 
     std::vector<DrawCall2d> drawCalls2d_;
-    void RenderDrawCalls2d(vk::raii::CommandBuffer& commandBuffer);
+    void RenderDrawCalls2d(vk::raii::CommandBuffer& commandBuffer) const;
 
     std::vector<VkModel> models_;
 
     size_t texture2dIndex_{0};
 
     struct UiTextureEntry {
-        VkTexture texture;
+        VkTexture               texture;
         vk::raii::DescriptorSet descriptorSet{nullptr};
-        uint32_t width{0};
-        uint32_t height{0};
+        uint32_t                width{0};
+        uint32_t                height{0};
     };
 
     struct UiGeometryEntry {
-        vk::raii::Buffer vertexBuffer_{nullptr};
-        vk::raii::DeviceMemory vertexBufferMemory_{nullptr};
-        vk::raii::Buffer indexBuffer_{nullptr};
-        vk::raii::DeviceMemory indexBufferMemory_{nullptr};
-        uint32_t indexCount{0};
+        vk::raii::Buffer       vertexBuffer{nullptr};
+        vk::raii::DeviceMemory vertexBufferMemory{nullptr};
+        vk::raii::Buffer       indexBuffer{nullptr};
+        vk::raii::DeviceMemory indexBufferMemory{nullptr};
+        uint32_t               indexCount{0};
     };
 
     vk::raii::DescriptorSet CreateUiTextureDescriptorSet(
-        const VkTexture& texture);
-    void RenderUiDrawCalls(vk::raii::CommandBuffer& commandBuffer);
+        const VkTexture& texture) const;
+    void RenderUiDrawCalls(vk::raii::CommandBuffer& commandBuffer) const;
 
-    std::vector<std::unique_ptr<UiTextureEntry>> uiTextures_;
+    std::vector<std::unique_ptr<UiTextureEntry>>  uiTextures_;
     std::vector<std::unique_ptr<UiGeometryEntry>> uiGeometries_;
-    std::vector<UiDrawCall> uiDrawCalls_;
+    std::vector<UiDrawCall>                       uiDrawCalls_;
 };

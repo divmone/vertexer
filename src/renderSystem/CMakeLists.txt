@@ -9,14 +9,14 @@ find_package(glm REQUIRED)
 add_engine_module(
         renderSystem
         include/renderSystem/VulkanContext.hpp
-        src/VulkanContext.cpp
-        src/VulkanContextDevice.cpp
-        src/VulkanContextPipelines.cpp
-        src/VulkanContextResources.cpp
-        src/VulkanContextScene3D.cpp
-        src/VulkanContextSprites2D.cpp
-        src/VulkanContextUi.cpp
-        src/PipelineBuilder.hpp src/PipelineBuilder.cpp
+        src/vulkanContext/VulkanContext.cpp
+        src/vulkanContext/VulkanContextDevice.cpp
+        src/vulkanContext/VulkanContextPipelines.cpp
+        src/vulkanContext/VulkanContextResources.cpp
+        src/vulkanContext/VulkanContextScene3D.cpp
+        src/vulkanContext/VulkanContextSprites2D.cpp
+        src/vulkanContext/VulkanContextUi.cpp
+        include/renderSystem/detail/PipelineBuilder.hpp src/PipelineBuilder.cpp
         include/renderSystem/PSO.hpp src/PSO.cpp
         include/renderSystem/types/Providers.hpp
         src/types/VulkanVertex3d.hpp
@@ -24,9 +24,9 @@ add_engine_module(
         include/renderSystem/types/DrawCall.hpp
         include/renderSystem/types/VulkanModel.hpp
         include/renderSystem/types/VulkanTexture.hpp
-        src/DescriptorSetLayoutBuilder.hpp
+        include/renderSystem/detail/DescriptorSetLayoutBuilder.hpp
         src/DescriptorSetLayoutBuilder.cpp
-        src/DescriptorPool.hpp
+        include/renderSystem/detail/DescriptorPool.hpp
         src/DescriptorPool.cpp
         include/renderSystem/types/VulkanSprite.hpp
 )

@@ -14,20 +14,20 @@ public:
             const vk::ArrayProxy<const vk::WriteDescriptorSet> writes, uint32_t framesCount)
         : framesCount_(framesCount) {
 
-        createDescriptorSetLayout(device, bindings);
-        createDescriptorPool(device, poolSizes);
-        createDescriptorSets(device, writes);
+        CreateDescriptorSetLayout(device, bindings);
+        CreateDescriptorPool(device, poolSizes);
+        CreateDescriptorSets(device, writes);
     }
 
-    [[nodiscard]] vk::DescriptorSetLayout getDescriptorSetLayout() const {
+    [[nodiscard]] vk::DescriptorSetLayout GetDescriptorSetLayout() const {
         return *descriptorSetLayout_;
     }
 
-    [[nodiscard]] vk::DescriptorSet getDescriptorSet(int index) const {
+    [[nodiscard]] vk::DescriptorSet GetDescriptorSet(int index) const {
         return *descriptorSets_[index];
     }
 
-    [[nodiscard]] vk::DescriptorPool getDescriptorPool() const {
+    [[nodiscard]] vk::DescriptorPool GetDescriptorPool() const {
         return *descriptorPool_;
     }
 private:
@@ -36,10 +36,10 @@ private:
     std::vector<vk::raii::DescriptorSet> descriptorSets_;
     vk::raii::DescriptorSetLayout descriptorSetLayout_{nullptr};
 
-    void createDescriptorSetLayout(vk::raii::Device &device,
+    void CreateDescriptorSetLayout(vk::raii::Device &device,
                                    vk::ArrayProxy<const vk::DescriptorSetLayoutBinding> bindings);
 
-    void createDescriptorPool(vk::raii::Device &device, vk::ArrayProxy<const vk::DescriptorPoolSize> poolSizes);
+    void CreateDescriptorPool(vk::raii::Device &device, vk::ArrayProxy<const vk::DescriptorPoolSize> poolSizes);
 
-    void createDescriptorSets(vk::raii::Device &device, vk::ArrayProxy<const vk::WriteDescriptorSet> writes);
+    void CreateDescriptorSets(vk::raii::Device &device, vk::ArrayProxy<const vk::WriteDescriptorSet> writes);
 };

@@ -1,48 +1,35 @@
-#include <PipelineBuilder.hpp>
 #include <chrono>
-#include <cmath>
 #include <fstream>
-#include <limits>
 #include <logSystem/Logger.hpp>
-#include <platformSystem/NativeSDLExtensions.hpp>
 #include <platformSystem/NativeVkSurfaceKHR.hpp>
 #include <renderSystem/VulkanContext.hpp>
 #include <resourceSystem/AssetLoader.hpp>
 #include <sceneSystem/Scene.hpp>
-#include <types/VulkanVertex3d.hpp>
-#include <typesSystem/EngineStats.hpp>
-
-#include "DescriptorSetLayoutBuilder.hpp"
-#include "FileSystem.hpp"
 #include "resourceSystem/types/Sprite.hpp"
-#include "types/VulkanVertex2d.hpp"
 
-struct EngineStats;
-
-constexpr uint32_t MAX_BINDLESS_RESOURCES = 20000;
 
 uint32_t VulkanContext::AddUiGeometry(std::span<const Vertex2d> vertices,
                                       std::span<const uint32_t> indices) {
     auto geometry = std::make_unique<UiGeometryEntry>();
 
-    vk::raii::CommandBuffer commandBuffer = beginSingleTimeCommand();
+    vk::raii::CommandBuffer commandBuffer = BeginSingleTimeCommand();
     std::vector<vk::raii::Buffer> stagingBuffers;
     std::vector<vk::raii::DeviceMemory> stagingMemories;
 
-    auto [vertexBuffer, vertexBufferMemory] = createUniversalBuffer<Vertex2d>(
+    auto [vertexBuffer, vertexBufferMemory] = CreateUniversalBuffer<Vertex2d>(
         commandBuffer, stagingBuffers, stagingMemories, vertices,
         vk::BufferUsageFlagBits::eVertexBuffer);
-    geometry->vertexBuffer_ = std::move(vertexBuffer);
-    geometry->vertexBufferMemory_ = std::move(vertexBufferMemory);
+    geometry->vertexBuffer = std::move(vertexBuffer);
+    geometry->vertexBufferMemory = std::move(vertexBufferMemory);
 
-    auto [indexBuffer, indexBufferMemory] = createUniversalBuffer<uint32_t>(
+    auto [indexBuffer, indexBufferMemory] = CreateUniversalBuffer<uint32_t>(
         commandBuffer, stagingBuffers, stagingMemories, indices,
         vk::BufferUsageFlagBits::eIndexBuffer);
-    geometry->indexBuffer_ = std::move(indexBuffer);
-    geometry->indexBufferMemory_ = std::move(indexBufferMemory);
+    geometry->indexBuffer = std::move(indexBuffer);
+    geometry->indexBufferMemory = std::move(indexBufferMemory);
     geometry->indexCount = static_cast<uint32_t>(indices.size());
 
-    endSingleTimeCommand(std::move(commandBuffer));
+    EndSingleTimeCommand(std::move(commandBuffer));
 
     uiGeometries_.push_back(std::move(geometry));
 
@@ -67,7 +54,7 @@ void VulkanContext::ReleaseUiGeometry(uint32_t geometryHandle) {
 
 
 vk::raii::DescriptorSet VulkanContext::CreateUiTextureDescriptorSet(
-    const VkTexture& texture) {
+    const VkTexture& texture) const {
     vk::DescriptorSetAllocateInfo allocInfo{
         .descriptorPool = generalDescriptorPool_,
         .descriptorSetCount = 1,
@@ -96,7 +83,7 @@ vk::raii::DescriptorSet VulkanContext::CreateUiTextureDescriptorSet(
 uintptr_t VulkanContext::AddUiTexture(const ImageData& image) {
     auto texture = std::make_unique<UiTextureEntry>();
 
-    vk::raii::CommandBuffer commandBuffer = beginSingleTimeCommand();
+    vk::raii::CommandBuffer commandBuffer = BeginSingleTimeCommand();
     std::vector<vk::raii::Buffer> stagingBuffers;
     std::vector<vk::raii::DeviceMemory> stagingMemories;
 
@@ -107,7 +94,7 @@ uintptr_t VulkanContext::AddUiTexture(const ImageData& image) {
     texture->descriptorSet =
         CreateUiTextureDescriptorSet(texture->texture);
 
-    endSingleTimeCommand(std::move(commandBuffer));
+    EndSingleTimeCommand(std::move(commandBuffer));
 
     uiTextures_.push_back(std::move(texture));
 
@@ -136,17 +123,17 @@ uintptr_t VulkanContext::CreateOffscreenTarget(uint32_t width,
     texture->width = width;
     texture->height = height;
 
-    const auto format = m_swapChainSurfaceFormat.format;
+    const auto format = swapChainSurfaceFormat_.format;
 
     std::tie(texture->texture.textureImage,
              texture->texture.textureImageMemory) =
-        createImage(width, height, format, vk::ImageTiling::eOptimal,
+        CreateImage(width, height, format, vk::ImageTiling::eOptimal,
                     vk::ImageUsageFlagBits::eColorAttachment |
                         vk::ImageUsageFlagBits::eSampled,
                     vk::MemoryPropertyFlagBits::eDeviceLocal);
 
     texture->texture.textureImageView =
-        createImageView(texture->texture.textureImage, format,
+        CreateImageView(texture->texture.textureImage, format,
                         vk::ImageAspectFlagBits::eColor);
 
     vk::SamplerCreateInfo samplerInfo{};
@@ -188,9 +175,9 @@ void VulkanContext::RenderSpriteToOffscreen(SpriteHandle sprite,
     auto& target = *uiTextures_[targetIndex];
     const auto& vkSprite = spriteIt->second;
 
-    vk::raii::CommandBuffer commandBuffer = beginSingleTimeCommand();
+    vk::raii::CommandBuffer commandBuffer = BeginSingleTimeCommand();
 
-    transitionImageLayout(commandBuffer, target.texture.textureImage,
+    TransitionImageLayout(commandBuffer, target.texture.textureImage,
                           vk::ImageLayout::eUndefined,
                           vk::ImageLayout::eColorAttachmentOptimal);
 
@@ -226,12 +213,12 @@ void VulkanContext::RenderSpriteToOffscreen(SpriteHandle sprite,
     commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics,
                                graphicsPipeline2d_);
 
-    commandBuffer.bindVertexBuffers(0, *vkSprite.vertexBuffer_, {0});
-    commandBuffer.bindIndexBuffer(*vkSprite.indexBuffer_, 0,
+    commandBuffer.bindVertexBuffers(0, *vkSprite.vertexBuffer, {0});
+    commandBuffer.bindIndexBuffer(*vkSprite.indexBuffer, 0,
                                   vk::IndexType::eUint32);
     commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
                                      pipelineLayout2d_, 0,
-                                     *vkSprite.descriptorSet_, nullptr);
+                                     *vkSprite.descriptorSet, nullptr);
 
     glm::mat4 model = glm::translate(
         glm::mat4(1.0f),
@@ -250,15 +237,15 @@ void VulkanContext::RenderSpriteToOffscreen(SpriteHandle sprite,
         PushConstantObject2d{model, glm::mat4(1.0f), projection,
                              glm::vec4(1.0f), 1});
 
-    commandBuffer.drawIndexed(vkSprite.indicesCount_, 1, 0, 0, 0);
+    commandBuffer.drawIndexed(vkSprite.indicesCount, 1, 0, 0, 0);
 
     commandBuffer.endRendering();
 
-    transitionImageLayout(commandBuffer, target.texture.textureImage,
+    TransitionImageLayout(commandBuffer, target.texture.textureImage,
                           vk::ImageLayout::eColorAttachmentOptimal,
                           vk::ImageLayout::eShaderReadOnlyOptimal);
 
-    endSingleTimeCommand(std::move(commandBuffer));
+    EndSingleTimeCommand(std::move(commandBuffer));
 }
 
 
@@ -299,13 +286,13 @@ void VulkanContext::AddUiDrawCall(uint32_t geometryHandle,
     drawCall.mat = model;
     drawCall.hasTexture = hasTexture;
     drawCall.indexCount = geometry.indexCount;
-    drawCall.vertexBuffer_ = *geometry.vertexBuffer_;
-    drawCall.indexBuffer_ = *geometry.indexBuffer_;
+    drawCall.vertexBuffer_ = *geometry.vertexBuffer;
+    drawCall.indexBuffer_ = *geometry.indexBuffer;
     drawCall.scissorEnabled = scissorEnabled;
     drawCall.scissor_ = scissor;
 
     if (textureHandle != 0) {
-        const auto textureIndex = static_cast<size_t>(textureHandle - 1);
+        const auto textureIndex = textureHandle - 1;
         if (textureIndex < uiTextures_.size() && uiTextures_[textureIndex]) {
             drawCall.descriptorSet_ =
                 *uiTextures_[textureIndex]->descriptorSet;
@@ -317,7 +304,7 @@ void VulkanContext::AddUiDrawCall(uint32_t geometryHandle,
 
 
 void VulkanContext::RenderUiDrawCalls(
-    vk::raii::CommandBuffer& commandBuffer) {
+    vk::raii::CommandBuffer& commandBuffer) const {
     if (uiDrawCalls_.empty()) {
         return;
     }
@@ -331,7 +318,7 @@ void VulkanContext::RenderUiDrawCalls(
     }
 
     const vk::Rect2D fullScissor{
-        .offset = {.x = 0, .y = 0}, .extent = m_swapChainExtent};
+        .offset = {.x = 0, .y = 0}, .extent = swapChainExtent_};
 
     for (const auto& drawCall : uiDrawCalls_) {
         const auto descriptorSet = drawCall.descriptorSet_ != nullptr
@@ -353,9 +340,9 @@ void VulkanContext::RenderUiDrawCalls(
 
         commandBuffer.pushConstants<PushConstantObject2d>(
             pipelineLayout2d_, vk::ShaderStageFlagBits::eAllGraphics, 0,
-            PushConstantObject2d{drawCall.mat, view2d_, proj2d_,
-                                 glm::vec4(1.0f),
-                                 drawCall.hasTexture ? 1u : 0u});
+            PushConstantObject2d{.model=drawCall.mat, .view=view2d_, .proj=proj2d_,
+                                 .color=glm::vec4(1.0f),
+                                 .hasTexture=drawCall.hasTexture ? 1u : 0u});
 
         commandBuffer.drawIndexed(drawCall.indexCount, 1, 0, 0, 0);
     }

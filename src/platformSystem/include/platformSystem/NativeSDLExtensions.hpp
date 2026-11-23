@@ -1,10 +1,10 @@
 #pragma once
+
 #include <variant>
 #include <vector>
-
 #include <logSystem/Logger.hpp>
-
 #include "NativeWindowHandler.hpp"
+
 
 inline std::vector<const char*> GetNativeSDLExtensions(const NativeWindowHandler& h) {
     return std::visit(
@@ -36,8 +36,9 @@ inline std::vector<const char*> GetNativeSDLExtensions(const NativeWindowHandler
 #endif
             else {
                 static_assert(sizeof(T) == 0,
-                              "Unhandled NativeWindowHandler alternative");
+                    "Unhandled NativeWindowHandler alternative");
             }
+            return {};
         },
         h);
 }

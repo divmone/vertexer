@@ -25,5 +25,5 @@ private:
     UI ui_;
 
     void Init();
-    void Update(float deltaTime);
+    void Update(float deltaTime) const;
 };

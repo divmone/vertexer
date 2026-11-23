@@ -86,7 +86,7 @@ Rml::Input::KeyIdentifier ConvertKey(SDL_Keycode key) {
 
 int GetKeyModifierState() {
     const SDL_Keymod mod = SDL_GetModState();
-    int state = 0;
+    int state = 0u;
 
     if ((mod & SDL_KMOD_CTRL) != 0) {
         state |= Rml::Input::KM_CTRL;
@@ -126,7 +126,7 @@ int ConvertMouseButton(uint8_t button) {
     }
 }
 
-constexpr std::string_view kOffscreenPrefix = "offscreen_";
+constexpr std::string_view OFFSCREEN_PREFIX = "offscreen_";
 }  // namespace
 
 UI::UI() = default;
@@ -227,15 +227,15 @@ bool UI::RegisterOffscreenImage(const std::string& name,
     constexpr std::array<uint32_t, 6> quadIndices = {0, 1, 2, 2, 3, 0};
 
     SpriteData spriteData;
-    spriteData.vertices_.assign(quadVertices.begin(), quadVertices.end());
-    spriteData.indices_.assign(quadIndices.begin(), quadIndices.end());
-    spriteData.image_ = AssetLoader::loadImageDataFromFile(path);
+    spriteData.vertices.assign(quadVertices.begin(), quadVertices.end());
+    spriteData.indices.assign(quadIndices.begin(), quadIndices.end());
+    spriteData.image = AssetLoader::LoadImageDataFromFile(path);
 
     Sprite sprite;
-    sprite.handle_ = vulkanContext_->AddSprite(spriteData);
+    sprite.handle = vulkanContext_->AddSprite(spriteData);
 
     const auto target = vulkanContext_->CreateOffscreenTarget(width, height);
-    vulkanContext_->RenderSpriteToOffscreen(sprite.handle_, target);
+    vulkanContext_->RenderSpriteToOffscreen(sprite.handle, target);
 
     const auto [targetWidth, targetHeight] =
         vulkanContext_->GetUiTextureSize(target);
@@ -394,7 +394,7 @@ void UI::ReleaseGeometry(Rml::CompiledGeometryHandle geometry) {
     }
 }
 
-Rml::TextureHandle UI::LoadTexture(Rml::Vector2i& texture_dimensions,
+Rml::TextureHandle UI::LoadTexture(Rml::Vector2i& textureDimensions,
                                    const Rml::String& source) {
     if (vulkanContext_ == nullptr) {
         return 0;
@@ -404,11 +404,11 @@ Rml::TextureHandle UI::LoadTexture(Rml::Vector2i& texture_dimensions,
     std::replace(path.begin(), path.end(), '\\', '/');
 
     const auto filename = std::filesystem::path(path).filename().string();
-    if (filename.starts_with(kOffscreenPrefix)) {
-        const auto name = filename.substr(kOffscreenPrefix.size());
+    if (filename.starts_with(OFFSCREEN_PREFIX)) {
+        const auto name = filename.substr(OFFSCREEN_PREFIX.size());
         const auto it = namedTextures_.find(name);
         if (it != namedTextures_.end()) {
-            texture_dimensions = {
+            textureDimensions = {
                 static_cast<int>(it->second.width),
                 static_cast<int>(it->second.height)};
             return it->second.handle;
@@ -420,10 +420,10 @@ Rml::TextureHandle UI::LoadTexture(Rml::Vector2i& texture_dimensions,
         fullPath = FS::GetFullPath(FS::FileType::eAsset, path);
     }
 
-    ImageData image = AssetLoader::loadImageDataFromFile(fullPath);
+    ImageData image = AssetLoader::LoadImageDataFromFile(fullPath);
     const auto handle = vulkanContext_->AddUiTexture(image);
 
-    texture_dimensions = {static_cast<int>(image.width),
+    textureDimensions = {static_cast<int>(image.width),
                           static_cast<int>(image.height)};
 
     return static_cast<Rml::TextureHandle>(handle);
@@ -431,15 +431,15 @@ Rml::TextureHandle UI::LoadTexture(Rml::Vector2i& texture_dimensions,
 
 Rml::TextureHandle UI::GenerateTexture(
     Rml::Span<const Rml::byte> source,
-    Rml::Vector2i source_dimensions) {
+    Rml::Vector2i sourceDimensions) {
     if (vulkanContext_ == nullptr || source.empty()) {
         return 0;
     }
 
     ImageData image;
     image.data = const_cast<unsigned char*>(source.data());
-    image.width = static_cast<uint32_t>(source_dimensions.x);
-    image.height = static_cast<uint32_t>(source_dimensions.y);
+    image.width = static_cast<uint32_t>(sourceDimensions.x);
+    image.height = static_cast<uint32_t>(sourceDimensions.y);
     image.channels = 4;
 
     const auto handle = vulkanContext_->AddUiTexture(image);

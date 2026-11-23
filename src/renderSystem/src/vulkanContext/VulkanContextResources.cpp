@@ -1,39 +1,25 @@
-#include <PipelineBuilder.hpp>
+
 #include <chrono>
 #include <cmath>
 #include <fstream>
-#include <limits>
 #include <logSystem/Logger.hpp>
-#include <platformSystem/NativeSDLExtensions.hpp>
 #include <platformSystem/NativeVkSurfaceKHR.hpp>
 #include <renderSystem/VulkanContext.hpp>
 #include <resourceSystem/AssetLoader.hpp>
-#include <sceneSystem/Scene.hpp>
-#include <types/VulkanVertex3d.hpp>
-#include <typesSystem/EngineStats.hpp>
 
-#include "DescriptorSetLayoutBuilder.hpp"
-#include "FileSystem.hpp"
-#include "resourceSystem/types/Sprite.hpp"
-#include "types/VulkanVertex2d.hpp"
-
-struct EngineStats;
-
-constexpr uint32_t MAX_BINDLESS_RESOURCES = 20000;
-
-void VulkanContext::createDepthResources() {
-    depthFormat = findDepthFormat();
-    std::tie(depthImage, depthImageMemory) =
-        createImage(m_swapChainExtent.width, m_swapChainExtent.height,
-                    depthFormat, vk::ImageTiling::eOptimal,
+void VulkanContext::CreateDepthResources() {
+    depthFormat_ = FindDepthFormat();
+    std::tie(depthImage_, depthImageMemory_) =
+        CreateImage(swapChainExtent_.width, swapChainExtent_.height,
+                    depthFormat_, vk::ImageTiling::eOptimal,
                     vk::ImageUsageFlagBits::eDepthStencilAttachment,
                     vk::MemoryPropertyFlagBits::eDeviceLocal);
-    depthImageView = createImageView(depthImage, depthFormat,
+    depthImageView_ = CreateImageView(depthImage_, depthFormat_,
                                      vk::ImageAspectFlagBits::eDepth);
 }
 
 
-std::pair<vk::raii::Image, vk::raii::DeviceMemory> VulkanContext::createImage(
+std::pair<vk::raii::Image, vk::raii::DeviceMemory> VulkanContext::CreateImage(
     uint32_t width,
     uint32_t height,
     vk::Format format,
@@ -42,7 +28,7 @@ std::pair<vk::raii::Image, vk::raii::DeviceMemory> VulkanContext::createImage(
     vk::MemoryPropertyFlags properties) {
     vk::ImageCreateInfo imageInfo{.imageType = vk::ImageType::e2D,
                                   .format = format,
-                                  .extent = {width, height, 1},
+                                  .extent = {.width=width, .height=height, .depth=1},
                                   .mipLevels = 1,
                                   .arrayLayers = 1,
                                   .samples = vk::SampleCountFlagBits::e1,
@@ -50,14 +36,14 @@ std::pair<vk::raii::Image, vk::raii::DeviceMemory> VulkanContext::createImage(
                                   .usage = usage,
                                   .sharingMode = vk::SharingMode::eExclusive};
 
-    vk::raii::Image image = vk::raii::Image(device_, imageInfo);
+    auto image = vk::raii::Image(device_, imageInfo);
 
     vk::MemoryRequirements memRequirements = image.getMemoryRequirements();
     vk::MemoryAllocateInfo allocInfo{
         .allocationSize = memRequirements.size,
         .memoryTypeIndex =
-            findMemoryType(memRequirements.memoryTypeBits, properties)};
-    vk::raii::DeviceMemory imageMemory =
+            FindMemoryType(memRequirements.memoryTypeBits, properties)};
+    auto imageMemory =
         vk::raii::DeviceMemory(device_, allocInfo);
     image.bindMemory(imageMemory, 0);
 
@@ -65,10 +51,10 @@ std::pair<vk::raii::Image, vk::raii::DeviceMemory> VulkanContext::createImage(
 }
 
 
-vk::raii::ImageView VulkanContext::createImageView(
+vk::raii::ImageView VulkanContext::CreateImageView(
     const vk::Image& image,
     vk::Format format,
-    vk::ImageAspectFlags aspectFlags) {
+    vk::ImageAspectFlags aspectFlags) const {
     vk::ImageViewCreateInfo viewInfo{
         .image = image,
         .viewType = vk::ImageViewType::e2D,
@@ -78,27 +64,30 @@ vk::raii::ImageView VulkanContext::createImageView(
                              .levelCount = 1,
                              .baseArrayLayer = 0,
                              .layerCount = 1}};
-    return vk::raii::ImageView(device_, viewInfo);
+    return {device_, viewInfo};
 }
 
 
-uint32_t VulkanContext::findMemoryType(uint32_t typeFilter,
-                                       vk::MemoryPropertyFlags properties) {
+uint32_t VulkanContext::FindMemoryType(uint32_t typeFilter,
+                                       vk::MemoryPropertyFlags properties) const {
     vk::PhysicalDeviceMemoryProperties memProperties =
-        m_physicalDevice.getMemoryProperties();
+        physicalDevice_.getMemoryProperties();
+
     for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
-        if ((typeFilter & (1 << i)) &&
+        if (
+            typeFilter & (1u << i) &&
             (memProperties.memoryTypes[i].propertyFlags & properties) ==
                 properties) {
             return i;
         }
     }
+
     LOG_ERROR("failed to find suitable memory type!");
     throw std::runtime_error("failed to find suitable memory type!");
 }
 
 
-void VulkanContext::copyBufferToImage(vk::raii::CommandBuffer& commandBuffer,
+void VulkanContext::CopyBufferToImage(vk::raii::CommandBuffer& commandBuffer,
                                       const vk::raii::Buffer& buffer,
                                       vk::raii::Image& image,
                                       uint32_t width,
@@ -118,38 +107,38 @@ void VulkanContext::copyBufferToImage(vk::raii::CommandBuffer& commandBuffer,
 }
 
 
-void VulkanContext::transition_image_layout(
+void VulkanContext::TransitionImageLayout(
     vk::Image image,
-    vk::ImageLayout old_layout,
-    vk::ImageLayout new_layout,
-    vk::AccessFlags2 src_access_mask,
-    vk::AccessFlags2 dst_access_mask,
-    vk::PipelineStageFlags2 src_stage_mask,
-    vk::PipelineStageFlags2 dst_stage_mask,
-    vk::ImageAspectFlags image_aspect_flags) {
+    vk::ImageLayout oldLayout,
+    vk::ImageLayout newLayout,
+    vk::AccessFlags2 srcAccessMask,
+    vk::AccessFlags2 dstAccessMask,
+    vk::PipelineStageFlags2 srcStageMask,
+    vk::PipelineStageFlags2 dstStageMask,
+    vk::ImageAspectFlags imageAspectFlags) const {
     vk::ImageMemoryBarrier2 barrier = {
-        .srcStageMask = src_stage_mask,
-        .srcAccessMask = src_access_mask,
-        .dstStageMask = dst_stage_mask,
-        .dstAccessMask = dst_access_mask,
-        .oldLayout = old_layout,
-        .newLayout = new_layout,
+        .srcStageMask = srcStageMask,
+        .srcAccessMask = srcAccessMask,
+        .dstStageMask = dstStageMask,
+        .dstAccessMask = dstAccessMask,
+        .oldLayout = oldLayout,
+        .newLayout = newLayout,
         .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
         .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
         .image = image,
-        .subresourceRange = {.aspectMask = image_aspect_flags,
+        .subresourceRange = {.aspectMask = imageAspectFlags,
                              .baseMipLevel = 0,
                              .levelCount = 1,
                              .baseArrayLayer = 0,
                              .layerCount = 1}};
-    vk::DependencyInfo dependency_info = {.dependencyFlags = {},
+    vk::DependencyInfo dependencyInfo = {.dependencyFlags = {},
                                           .imageMemoryBarrierCount = 1,
                                           .pImageMemoryBarriers = &barrier};
-    m_commandBuffer[frameIndex].pipelineBarrier2(dependency_info);
+    commandBuffer_[frameIndex_].pipelineBarrier2(dependencyInfo);
 }
 
 
-void VulkanContext::transitionImageLayout(
+void VulkanContext::TransitionImageLayout(
     vk::raii::CommandBuffer& commandBuffer,
     const vk::raii::Image& image,
     vk::ImageLayout oldLayout,
@@ -160,9 +149,10 @@ void VulkanContext::transitionImageLayout(
         .srcQueueFamilyIndex = vk::QueueFamilyIgnored,
         .dstQueueFamilyIndex = vk::QueueFamilyIgnored,
         .image = image,
-        .subresourceRange = {.aspectMask = vk::ImageAspectFlagBits::eColor,
-                             .levelCount = 1,
-                             .layerCount = 1}};
+        .subresourceRange = {
+            .aspectMask = vk::ImageAspectFlagBits::eColor,
+            .levelCount = 1,
+            .layerCount = 1}};
 
     vk::PipelineStageFlags sourceStage;
     vk::PipelineStageFlags destinationStage;
@@ -204,23 +194,23 @@ void VulkanContext::transitionImageLayout(
 }
 
 
-std::pair<vk::raii::Buffer, vk::raii::DeviceMemory> VulkanContext::createBuffer(
+std::pair<vk::raii::Buffer, vk::raii::DeviceMemory> VulkanContext::CreateBuffer(
     vk::DeviceSize size,
     vk::BufferUsageFlags usage,
-    vk::MemoryPropertyFlags properties) {
+    vk::MemoryPropertyFlags properties) const {
     vk::BufferCreateInfo bufferCreateInfo{
         .size = size,
         .usage = usage,
         .sharingMode = vk::SharingMode::eExclusive,
     };
-    vk::raii::Buffer buffer = vk::raii::Buffer(device_, bufferCreateInfo);
+    auto buffer = vk::raii::Buffer(device_, bufferCreateInfo);
 
     vk::MemoryRequirements memRequirements = buffer.getMemoryRequirements();
 
     vk::MemoryAllocateInfo memoryAllocateInfo{
         .allocationSize = memRequirements.size,
         .memoryTypeIndex =
-            findMemoryType(memRequirements.memoryTypeBits, properties)};
+            FindMemoryType(memRequirements.memoryTypeBits, properties)};
 
     auto bufferMemory = vk::raii::DeviceMemory(device_, memoryAllocateInfo);
     buffer.bindMemory(*bufferMemory, 0);
@@ -229,9 +219,9 @@ std::pair<vk::raii::Buffer, vk::raii::DeviceMemory> VulkanContext::createBuffer(
 }
 
 
-vk::raii::CommandBuffer VulkanContext::beginSingleTimeCommand() {
+vk::raii::CommandBuffer VulkanContext::BeginSingleTimeCommand() const {
     vk::CommandBufferAllocateInfo allocInfo{
-        .commandPool = m_commandPool,
+        .commandPool = commandPool_,
         .level = vk::CommandBufferLevel::ePrimary,
         .commandBufferCount = 1};
     vk::raii::CommandBuffer commandBuffer =
@@ -245,24 +235,24 @@ vk::raii::CommandBuffer VulkanContext::beginSingleTimeCommand() {
 }
 
 
-void VulkanContext::endSingleTimeCommand(
+void VulkanContext::EndSingleTimeCommand(
     vk::raii::CommandBuffer&& commandBuffer) const {
     commandBuffer.end();
 
     vk::SubmitInfo submitInfo{.commandBufferCount = 1,
                               .pCommandBuffers = &*commandBuffer};
-    m_graphicsQueue.submit(submitInfo, nullptr);
-    m_graphicsQueue.waitIdle();
+    graphicsQueue_.submit(submitInfo, nullptr);
+    graphicsQueue_.waitIdle();
 }
 
 
-vk::Format VulkanContext::findSupportedFormat(
+vk::Format VulkanContext::FindSupportedFormat(
     const std::vector<vk::Format>& candidates,
     vk::ImageTiling tiling,
     vk::FormatFeatureFlags features) const {
     for (const auto format : candidates) {
         vk::FormatProperties props =
-            m_physicalDevice.getFormatProperties(format);
+            physicalDevice_.getFormatProperties(format);
 
         if (((tiling == vk::ImageTiling::eLinear) &&
              ((props.linearTilingFeatures & features) == features)) ||
@@ -277,8 +267,8 @@ vk::Format VulkanContext::findSupportedFormat(
 }
 
 
-vk::Format VulkanContext::findDepthFormat() {
-    return findSupportedFormat(
+vk::Format VulkanContext::FindDepthFormat() const {
+    return FindSupportedFormat(
         {vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint,
          vk::Format::eD24UnormS8Uint},
         vk::ImageTiling::eOptimal,
@@ -292,11 +282,11 @@ VkTexture VulkanContext::CreateVkTextureFromImageData(
     std::vector<vk::raii::DeviceMemory>& stagingMemories,
     const ImageData& imageData) {
     VkTexture texture;
-    vk::DeviceSize imageSize = static_cast<vk::DeviceSize>(
+    auto imageSize = static_cast<vk::DeviceSize>(
         imageData.width * imageData.height * imageData.channels);
 
     auto [stagingBuffer, stagingBufferMemory] =
-        createBuffer(imageSize, vk::BufferUsageFlagBits::eTransferSrc,
+        CreateBuffer(imageSize, vk::BufferUsageFlagBits::eTransferSrc,
                      vk::MemoryPropertyFlagBits::eHostVisible |
                          vk::MemoryPropertyFlagBits::eHostCoherent);
 
@@ -305,24 +295,24 @@ VkTexture VulkanContext::CreateVkTextureFromImageData(
     memcpy(data, imageData.data, imageSize);
     stagingBufferMemory.unmapMemory();
 
-    std::tie(texture.textureImage, texture.textureImageMemory) = createImage(
+    std::tie(texture.textureImage, texture.textureImageMemory) = CreateImage(
         imageData.width, imageData.height, vk::Format::eR8G8B8A8Srgb,
         vk::ImageTiling::eOptimal,
         vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
         vk::MemoryPropertyFlagBits::eDeviceLocal);
 
-    transitionImageLayout(commandBuffer, texture.textureImage,
+    TransitionImageLayout(commandBuffer, texture.textureImage,
                           vk::ImageLayout::eUndefined,
                           vk::ImageLayout::eTransferDstOptimal);
-    copyBufferToImage(commandBuffer, stagingBuffer, texture.textureImage,
-                      static_cast<uint32_t>(imageData.width),
-                      static_cast<uint32_t>(imageData.height));
-    transitionImageLayout(commandBuffer, texture.textureImage,
+    CopyBufferToImage(commandBuffer, stagingBuffer, texture.textureImage,
+                      imageData.width,
+                      imageData.height);
+    TransitionImageLayout(commandBuffer, texture.textureImage,
                           vk::ImageLayout::eTransferDstOptimal,
                           vk::ImageLayout::eShaderReadOnlyOptimal);
 
     texture.textureImageView =
-        createImageView(texture.textureImage, vk::Format::eR8G8B8A8Srgb,
+        CreateImageView(texture.textureImage, vk::Format::eR8G8B8A8Srgb,
                         vk::ImageAspectFlagBits::eColor);
 
     vk::SamplerCreateInfo samplerInfo{};
@@ -330,7 +320,7 @@ VkTexture VulkanContext::CreateVkTextureFromImageData(
 
     stagingBuffers.push_back(std::move(stagingBuffer));
     stagingMemories.push_back(std::move(stagingBufferMemory));
-    textureCounter++;
+    textureCounter_++;
 
     return texture;
 }

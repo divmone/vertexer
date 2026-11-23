@@ -13,8 +13,8 @@
 
 class AssetLoader {
 public:
-    static Model loadModelFromGltf(const std::string& pathToFile);
-    static ImageData loadImageDataFromFile(const std::string& pathToFile);
+    static Model LoadModelFromGltf(const std::string& pathToFile);
+    static ImageData LoadImageDataFromFile(const std::string& pathToFile);
 
     // static std::vector<VkMaterial> LoadMaterialsFromGltf(const std::string&
     // pathToFile);

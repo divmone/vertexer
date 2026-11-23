@@ -8,7 +8,7 @@
 
 class DescriptorPool {
 public:
-    DescriptorPool() = default;
+    DescriptorPool() = delete;
 private:
     vk::raii::DescriptorPool pool_;
 };

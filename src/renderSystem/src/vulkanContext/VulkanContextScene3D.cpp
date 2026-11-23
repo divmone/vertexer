@@ -1,27 +1,17 @@
-#include <PipelineBuilder.hpp>
+
 #include <chrono>
 #include <cmath>
+#include <cstddef>
 #include <fstream>
-#include <limits>
 #include <logSystem/Logger.hpp>
-#include <platformSystem/NativeSDLExtensions.hpp>
 #include <platformSystem/NativeVkSurfaceKHR.hpp>
 #include <renderSystem/VulkanContext.hpp>
 #include <resourceSystem/AssetLoader.hpp>
 #include <sceneSystem/Scene.hpp>
-#include <types/VulkanVertex3d.hpp>
-#include <typesSystem/EngineStats.hpp>
-
-#include "DescriptorSetLayoutBuilder.hpp"
-#include "FileSystem.hpp"
 #include "resourceSystem/types/Sprite.hpp"
-#include "types/VulkanVertex2d.hpp"
 
-struct EngineStats;
 
-constexpr uint32_t MAX_BINDLESS_RESOURCES = 20000;
-
-void VulkanContext::processNodes(unsigned root,
+void VulkanContext::ProcessNodes(unsigned root,
                                  const glm::mat4& mat,
                                  const VkModel& model,
                                  uint32_t modelIndex) {
@@ -31,7 +21,7 @@ void VulkanContext::processNodes(unsigned root,
     if (node.meshIndex != -1) {
         const Mesh& mesh = model.meshes[node.meshIndex];
         for (const auto& prim : mesh.primitives) {
-            drawCalls.push_back(
+            drawCalls_.push_back(
                 DrawCall {
                     .textureIndex=prim.textureIndex + model.textureOffset,
                     .mat=world,
@@ -45,7 +35,7 @@ void VulkanContext::processNodes(unsigned root,
             );
         }
         for (const auto& prim : mesh.blendPrimitives) {
-            blendDrawCalls.push_back(
+            blendDrawCalls_.push_back(
                 DrawCall {
                     .textureIndex=prim.textureIndex + model.textureOffset,
                     .mat=world,
@@ -61,12 +51,12 @@ void VulkanContext::processNodes(unsigned root,
     }
 
     for (const auto& child : node.children) {
-        processNodes(child, world, model, modelIndex);
+        ProcessNodes(child, world, model, modelIndex);
     }
 }
 
 
-void VulkanContext::drawBlendNodes(unsigned root,
+void VulkanContext::DrawBlendNodes(unsigned root,
                                    const glm::mat4& mat,
                                    const VkModel& model) {}
 
@@ -258,19 +248,19 @@ void VulkanContext::recordCommandBuffer(uint32_t index,
 
 
 
-std::vector<VkTexture> VulkanContext::createTexturesFromImages(
+std::vector<VkTexture> VulkanContext::CreateTexturesFromImages(
     vk::raii::CommandBuffer& commandBuffer,
     std::vector<vk::raii::Buffer>& stagingBuffers,
     std::vector<vk::raii::DeviceMemory>& stagingMemories,
     const Model& model) {
     std::vector<VkTexture> textures;
 
-    for (const auto& imageData : model.images_) {
+    for (const auto& imageData : model.images) {
         VkTexture texture;
         vk::DeviceSize imageSize =
             imageData.width * imageData.height * imageData.channels;
         auto [stagingBuffer, stagingBufferMemory] =
-            createBuffer(imageSize, vk::BufferUsageFlagBits::eTransferSrc,
+            CreateBuffer(imageSize, vk::BufferUsageFlagBits::eTransferSrc,
                          vk::MemoryPropertyFlagBits::eHostVisible |
                              vk::MemoryPropertyFlagBits::eHostCoherent);
         void* data = stagingBufferMemory.mapMemory(0, imageSize);
@@ -278,24 +268,24 @@ std::vector<VkTexture> VulkanContext::createTexturesFromImages(
         stagingBufferMemory.unmapMemory();
 
         std::tie(texture.textureImage, texture.textureImageMemory) =
-            createImage(imageData.width, imageData.height,
+            CreateImage(imageData.width, imageData.height,
                         vk::Format::eR8G8B8A8Srgb, vk::ImageTiling::eOptimal,
                         vk::ImageUsageFlagBits::eTransferDst |
                             vk::ImageUsageFlagBits::eSampled,
                         vk::MemoryPropertyFlagBits::eDeviceLocal);
 
-        transitionImageLayout(commandBuffer, texture.textureImage,
+        TransitionImageLayout(commandBuffer, texture.textureImage,
                               vk::ImageLayout::eUndefined,
                               vk::ImageLayout::eTransferDstOptimal);
-        copyBufferToImage(commandBuffer, stagingBuffer, texture.textureImage,
+        CopyBufferToImage(commandBuffer, stagingBuffer, texture.textureImage,
                           static_cast<uint32_t>(imageData.width),
                           static_cast<uint32_t>(imageData.height));
-        transitionImageLayout(commandBuffer, texture.textureImage,
+        TransitionImageLayout(commandBuffer, texture.textureImage,
                               vk::ImageLayout::eTransferDstOptimal,
                               vk::ImageLayout::eShaderReadOnlyOptimal);
 
         texture.textureImageView =
-            createImageView(texture.textureImage, vk::Format::eR8G8B8A8Srgb,
+            CreateImageView(texture.textureImage, vk::Format::eR8G8B8A8Srgb,
                             vk::ImageAspectFlagBits::eColor);
 
         vk::SamplerCreateInfo samplerInfo{};
@@ -304,42 +294,42 @@ std::vector<VkTexture> VulkanContext::createTexturesFromImages(
         textures.push_back(std::move(texture));
         stagingBuffers.push_back(std::move(stagingBuffer));
         stagingMemories.push_back(std::move(stagingBufferMemory));
-        textureCounter++;
+        textureCounter_++;
     }
 
     return textures;
 }
 
 
-VkModel VulkanContext::loadModel(const std::string& path) {
+VkModel VulkanContext::LoadModel(const std::string& path) {
     VkModel vkModel;
-    auto model = AssetLoader::loadModelFromGltf(path);
+    auto model = AssetLoader::LoadModelFromGltf(path);
 
-    vk::raii::CommandBuffer commandBuffer = beginSingleTimeCommand();
+    vk::raii::CommandBuffer commandBuffer = BeginSingleTimeCommand();
     std::vector<vk::raii::Buffer> stagingBuffers;
     std::vector<vk::raii::DeviceMemory> stagingMemories;
 
-    auto [vertexBuffer, vertexBufferMemory] = createUniversalBuffer<Vertex3d>(
-        commandBuffer, stagingBuffers, stagingMemories, model.vertices_,
+    auto [vertexBuffer, vertexBufferMemory] = CreateUniversalBuffer<Vertex3d>(
+        commandBuffer, stagingBuffers, stagingMemories, model.vertices,
         vk::BufferUsageFlagBits::eVertexBuffer);
     vkModel.vertexBuffer = std::move(vertexBuffer);
     vkModel.vertexBufferMemory = std::move(vertexBufferMemory);
 
-    auto [indexBuffer, indexBufferMemory] = createUniversalBuffer<uint32_t>(
+    auto [indexBuffer, indexBufferMemory] = CreateUniversalBuffer<uint32_t>(
         commandBuffer, stagingBuffers, stagingMemories, model.indices,
         vk::BufferUsageFlagBits::eIndexBuffer);
     vkModel.indexBuffer = std::move(indexBuffer);
     vkModel.indexBufferMemory = std::move(indexBufferMemory);
     vkModel.indicesCount = model.indices.size();
 
-    vkModel.meshes = std::move(model.meshes_);
-    vkModel.nodes = std::move(model.nodes_);
-    vkModel.rootNodes = std::move(model.rootNodes_);
-    vkModel.textureOffset = textureCounter;
-    vkModel.textures = createTexturesFromImages(commandBuffer, stagingBuffers,
+    vkModel.meshes = std::move(model.meshes);
+    vkModel.nodes = std::move(model.nodes);
+    vkModel.rootNodes = std::move(model.rootNodes);
+    vkModel.textureOffset = textureCounter_;
+    vkModel.textures = CreateTexturesFromImages(commandBuffer, stagingBuffers,
                                                 stagingMemories, model);
 
-    endSingleTimeCommand(std::move(commandBuffer));
+    EndSingleTimeCommand(std::move(commandBuffer));
 
     return vkModel;
 }
@@ -347,31 +337,31 @@ VkModel VulkanContext::loadModel(const std::string& path) {
 
 SpriteHandle VulkanContext::AddModel(const Model& model) {
     VkModel vkModel;
-    vk::raii::CommandBuffer commandBuffer = beginSingleTimeCommand();
+    vk::raii::CommandBuffer commandBuffer = BeginSingleTimeCommand();
     std::vector<vk::raii::Buffer> stagingBuffers;
     std::vector<vk::raii::DeviceMemory> stagingMemories;
 
-    auto [vertexBuffer, vertexBufferMemory] = createUniversalBuffer<Vertex3d>(
-        commandBuffer, stagingBuffers, stagingMemories, model.vertices_,
+    auto [vertexBuffer, vertexBufferMemory] = CreateUniversalBuffer<Vertex3d>(
+        commandBuffer, stagingBuffers, stagingMemories, model.vertices,
         vk::BufferUsageFlagBits::eVertexBuffer);
     vkModel.vertexBuffer = std::move(vertexBuffer);
     vkModel.vertexBufferMemory = std::move(vertexBufferMemory);
 
-    auto [indexBuffer, indexBufferMemory] = createUniversalBuffer<uint32_t>(
+    auto [indexBuffer, indexBufferMemory] = CreateUniversalBuffer<uint32_t>(
         commandBuffer, stagingBuffers, stagingMemories, model.indices,
         vk::BufferUsageFlagBits::eIndexBuffer);
     vkModel.indexBuffer = std::move(indexBuffer);
     vkModel.indexBufferMemory = std::move(indexBufferMemory);
     vkModel.indicesCount = model.indices.size();
 
-    vkModel.meshes = model.meshes_;
-    vkModel.nodes = model.nodes_;
-    vkModel.rootNodes = model.rootNodes_;
-    vkModel.textureOffset = textureCounter;
-    vkModel.textures = createTexturesFromImages(commandBuffer, stagingBuffers,
+    vkModel.meshes = model.meshes;
+    vkModel.nodes = model.nodes;
+    vkModel.rootNodes = model.rootNodes;
+    vkModel.textureOffset = textureCounter_;
+    vkModel.textures = CreateTexturesFromImages(commandBuffer, stagingBuffers,
                                                 stagingMemories, model);
 
-    endSingleTimeCommand(std::move(commandBuffer));
+    EndSingleTimeCommand(std::move(commandBuffer));
 
     models_.emplace_back(std::move(vkModel));
 
@@ -379,7 +369,7 @@ SpriteHandle VulkanContext::AddModel(const Model& model) {
 }
 
 
-uint32_t VulkanContext::loadAsset(const std::string& path) {
+uint32_t VulkanContext::LoadAsset(const std::string& path) {
     if (!std::filesystem::exists(path)) {
         LOG_ERROR("file not found: {}", path);
         throw std::runtime_error("file not found: " + path);
@@ -391,7 +381,7 @@ uint32_t VulkanContext::loadAsset(const std::string& path) {
         throw std::runtime_error("Failed to open file: " + path);
     }
 
-    models_.push_back(loadModel(path));
+    models_.push_back(LoadModel(path));
     return models_.size() - 1;
 }
 

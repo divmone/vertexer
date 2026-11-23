@@ -1,36 +1,26 @@
-#include <PipelineBuilder.hpp>
 #include <chrono>
 #include <cmath>
 #include <fstream>
 #include <limits>
 #include <logSystem/Logger.hpp>
-#include <platformSystem/NativeSDLExtensions.hpp>
 #include <platformSystem/NativeVkSurfaceKHR.hpp>
 #include <renderSystem/VulkanContext.hpp>
 #include <resourceSystem/AssetLoader.hpp>
 #include <sceneSystem/Scene.hpp>
-#include <types/VulkanVertex3d.hpp>
 #include <typesSystem/EngineStats.hpp>
-
-#include "DescriptorSetLayoutBuilder.hpp"
-#include "FileSystem.hpp"
 #include "resourceSystem/types/Sprite.hpp"
-#include "types/VulkanVertex2d.hpp"
 
-struct EngineStats;
 
-constexpr uint32_t MAX_BINDLESS_RESOURCES = 20000;
-
-void VulkanContext::recordCommandBuffer2d(uint32_t imageIndex,
+void VulkanContext::RecordCommandBuffer2d(uint32_t imageIndex,
                                           EngineStats& stats) {
     stats.drawcallCount = 0;
     stats.triangleCount = 0;
 
-    auto& cmd = m_commandBuffer[frameIndex];
+    auto& cmd = commandBuffer_[frameIndex_];
 
     cmd.begin({});
 
-    transition_image_layout(m_swapChainImages[imageIndex],
+    TransitionImageLayout(swapChainImages_[imageIndex],
                             vk::ImageLayout::eUndefined,
                             vk::ImageLayout::eColorAttachmentOptimal, {},
                             vk::AccessFlagBits2::eColorAttachmentWrite,
@@ -41,14 +31,14 @@ void VulkanContext::recordCommandBuffer2d(uint32_t imageIndex,
     vk::ClearValue clearValue = vk::ClearColorValue(0.0f, 0.0f, 0.9f, 1.0f);
 
     vk::RenderingAttachmentInfo colorAttachment{
-        .imageView = m_swapChainImageViews[imageIndex],
+        .imageView = swapChainImageViews_[imageIndex],
         .imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
         .loadOp = vk::AttachmentLoadOp::eClear,
         .storeOp = vk::AttachmentStoreOp::eStore,
         .clearValue = clearValue};
 
     vk::RenderingInfo renderingInfo{
-        .renderArea = {.offset = {.x = 0, .y = 0}, .extent = m_swapChainExtent},
+        .renderArea = {.offset = {.x = 0, .y = 0}, .extent = swapChainExtent_},
         .layerCount = 1,
         .colorAttachmentCount = 1,
         .pColorAttachments = &colorAttachment,
@@ -58,9 +48,9 @@ void VulkanContext::recordCommandBuffer2d(uint32_t imageIndex,
 
     cmd.setViewport(0, vk::Viewport(
         0.0f, 0.0f,
-        static_cast<float>(m_swapChainExtent.width),
-        static_cast<float>(m_swapChainExtent.height), 0.0f, 1.0f));
-    cmd.setScissor(0, vk::Rect2D(vk::Offset2D(0, 0), m_swapChainExtent));
+        static_cast<float>(swapChainExtent_.width),
+        static_cast<float>(swapChainExtent_.height), 0.0f, 1.0f));
+    cmd.setScissor(0, vk::Rect2D(vk::Offset2D(0, 0), swapChainExtent_));
 
     cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, graphicsPipeline2d_);
 
@@ -79,7 +69,7 @@ void VulkanContext::recordCommandBuffer2d(uint32_t imageIndex,
     cmd.endRendering();
 
     // swapchain image: color attachment → present
-    transition_image_layout(m_swapChainImages[imageIndex],
+    TransitionImageLayout(swapChainImages_[imageIndex],
                             vk::ImageLayout::eColorAttachmentOptimal,
                             vk::ImageLayout::ePresentSrcKHR,
                             vk::AccessFlagBits2::eColorAttachmentWrite, {},
@@ -96,17 +86,17 @@ void VulkanContext::recordCommandBuffer2d(uint32_t imageIndex,
 
 void VulkanContext::DrawSprites(EngineStats& stats) {
     auto fenceResult =
-        device_.waitForFences(*drawFence[frameIndex], vk::True, UINT64_MAX);
+        device_.waitForFences(*drawFence_[frameIndex_], vk::True, UINT64_MAX);
     if (fenceResult != vk::Result::eSuccess) {
         LOG_ERROR("failed to wait for fence!");
         throw std::runtime_error("failed to wait for fence!");
     }
 
-    auto [result, imageIndex] = m_swapchain.acquireNextImage(
-        UINT64_MAX, *presentCompleteSemaphore[frameIndex], nullptr);
+    auto [result, imageIndex] = swapchain_.acquireNextImage(
+        UINT64_MAX, *presentCompleteSemaphore_[frameIndex_], nullptr);
 
     if (result == vk::Result::eErrorOutOfDateKHR) {
-        recreateContext();
+        RecreateContext();
         return;
     }
     if (result != vk::Result::eSuccess &&
@@ -117,68 +107,68 @@ void VulkanContext::DrawSprites(EngineStats& stats) {
         throw std::runtime_error("failed to acquire swap chain image!");
     }
 
-    device_.resetFences(*drawFence[frameIndex]);
-    m_commandBuffer[frameIndex].reset();
+    device_.resetFences(*drawFence_[frameIndex_]);
+    commandBuffer_[frameIndex_].reset();
 
-    recordCommandBuffer2d(imageIndex, stats);
+    RecordCommandBuffer2d(imageIndex, stats);
 
     vk::PipelineStageFlags waitDestinationStageMask {vk::PipelineStageFlagBits::eColorAttachmentOutput};
 
     const vk::SubmitInfo submitInfo{
         .waitSemaphoreCount = 1,
-        .pWaitSemaphores = &*presentCompleteSemaphore[frameIndex],
+        .pWaitSemaphores = &*presentCompleteSemaphore_[frameIndex_],
         .pWaitDstStageMask = &waitDestinationStageMask,
         .commandBufferCount = 1,
-        .pCommandBuffers = &*m_commandBuffer[frameIndex],
+        .pCommandBuffers = &*commandBuffer_[frameIndex_],
         .signalSemaphoreCount = 1,
-        .pSignalSemaphores = &*renderFinishedSemaphore[imageIndex]};
+        .pSignalSemaphores = &*renderFinishedSemaphore_[imageIndex]};
 
-    m_graphicsQueue.submit(submitInfo, *drawFence[frameIndex]);
+    graphicsQueue_.submit(submitInfo, *drawFence_[frameIndex_]);
 
     vk::PresentInfoKHR presentInfoKHR{
         .waitSemaphoreCount = 1,
-        .pWaitSemaphores = &*renderFinishedSemaphore[imageIndex],
+        .pWaitSemaphores = &*renderFinishedSemaphore_[imageIndex],
         .swapchainCount = 1,
-        .pSwapchains = &*m_swapchain,
+        .pSwapchains = &*swapchain_,
         .pImageIndices = &imageIndex};
 
-    result = m_graphicsQueue.presentKHR(presentInfoKHR);
+    result = graphicsQueue_.presentKHR(presentInfoKHR);
     if ((result == vk::Result::eSuboptimalKHR) ||
         (result == vk::Result::eErrorOutOfDateKHR)) {
-        recreateContext();
+        RecreateContext();
     } else {
         assert(result == vk::Result::eSuccess);
     }
-    frameIndex = (frameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
+    frameIndex_ = (frameIndex_ + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
 
 void VulkanContext::AddSpriteToPipeline(const Sprite& sprite) {
-    auto& vkSprite = sprites_.at(sprite.handle_);
+    auto& vkSprite = sprites_.at(sprite.handle);
 
     drawCalls2d_.push_back({
-        .mat=sprite.transform_.GetModelMat(),
-        .hasTexture=vkSprite.hasTexture_,
-        .color=vkSprite.color_,
-        .indexCount=vkSprite.indicesCount_,
-        .vertexBuffer_=*vkSprite.vertexBuffer_,
-        .indexBuffer_=*vkSprite.indexBuffer_,
-        .descriptorSet_=*vkSprite.descriptorSet_
+        .mat=sprite.transform.GetModelMat(),
+        .hasTexture=vkSprite.hasTexture,
+        .color=vkSprite.color,
+        .indexCount=vkSprite.indicesCount,
+        .vertexBuffer_=*vkSprite.vertexBuffer,
+        .indexBuffer_=*vkSprite.indexBuffer,
+        .descriptorSet_=*vkSprite.descriptorSet
         }
     );
 }
 
 
-void VulkanContext::CreateDescriptorSetForSprite(VkSprite& sprite) {
+void VulkanContext::CreateDescriptorSetForSprite(VkSprite& sprite) const {
     vk::DescriptorSetAllocateInfo allocInfo{
         .descriptorPool = generalDescriptorPool_,
         .descriptorSetCount = 1,
         .pSetLayouts = &*descriptorSetLayout2d_};
 
-    sprite.descriptorSet_ =
+    sprite.descriptorSet =
         std::move(device_.allocateDescriptorSets(allocInfo)[0]);
 
-    const auto& texture = sprite.texture_;
+    const auto& texture = sprite.texture;
 
     vk::DescriptorImageInfo imageInfo{
         .sampler = texture.textureSampler,
@@ -186,7 +176,7 @@ void VulkanContext::CreateDescriptorSetForSprite(VkSprite& sprite) {
         .imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal};
 
     std::array writes{vk::WriteDescriptorSet{
-        .dstSet = sprite.descriptorSet_,
+        .dstSet = sprite.descriptorSet,
         .dstBinding = 0,
         .dstArrayElement = 0,
         .descriptorCount = 1,
@@ -196,7 +186,7 @@ void VulkanContext::CreateDescriptorSetForSprite(VkSprite& sprite) {
 }
 
 
-void VulkanContext::RenderDrawCalls2d(vk::raii::CommandBuffer& commandBuffer) {
+void VulkanContext::RenderDrawCalls2d(vk::raii::CommandBuffer& commandBuffer) const {
     for (const auto& drawCall : drawCalls2d_) {
         commandBuffer.bindVertexBuffers(0, drawCall.vertexBuffer_, {0});
         commandBuffer.bindIndexBuffer(drawCall.indexBuffer_, 0,
@@ -218,34 +208,34 @@ void VulkanContext::RenderDrawCalls2d(vk::raii::CommandBuffer& commandBuffer) {
 
 SpriteHandle VulkanContext::AddSprite(const SpriteData& sprite) {
     VkSprite vkSprite;
-    vk::raii::CommandBuffer commandBuffer = beginSingleTimeCommand();
+    vk::raii::CommandBuffer commandBuffer = BeginSingleTimeCommand();
 
     std::vector<vk::raii::Buffer> stagingBuffers;
     std::vector<vk::raii::DeviceMemory> stagingMemories;
 
-    auto [vertexBuffer, vertexBufferMemory] = createUniversalBuffer<Vertex2d>(
-        commandBuffer, stagingBuffers, stagingMemories, sprite.vertices_,
+    auto [vertexBuffer, vertexBufferMemory] = CreateUniversalBuffer<Vertex2d>(
+        commandBuffer, stagingBuffers, stagingMemories, sprite.vertices,
         vk::BufferUsageFlagBits::eVertexBuffer);
 
-    vkSprite.vertexBuffer_ = std::move(vertexBuffer);
-    vkSprite.vertexBufferMemory_ = std::move(vertexBufferMemory);
+    vkSprite.vertexBuffer = std::move(vertexBuffer);
+    vkSprite.vertexBufferMemory = std::move(vertexBufferMemory);
 
-    auto [indexBuffer, indexBufferMemory] = createUniversalBuffer<uint32_t>(
-        commandBuffer, stagingBuffers, stagingMemories, sprite.indices_,
+    auto [indexBuffer, indexBufferMemory] = CreateUniversalBuffer<uint32_t>(
+        commandBuffer, stagingBuffers, stagingMemories, sprite.indices,
         vk::BufferUsageFlagBits::eIndexBuffer);
 
-    vkSprite.indexBuffer_ = std::move(indexBuffer);
-    vkSprite.indexBufferMemory_ = std::move(indexBufferMemory);
-    vkSprite.indicesCount_ = sprite.indices_.size();
+    vkSprite.indexBuffer = std::move(indexBuffer);
+    vkSprite.indexBufferMemory = std::move(indexBufferMemory);
+    vkSprite.indicesCount = sprite.indices.size();
 
     VkTexture texture = CreateVkTextureFromImageData(
-        commandBuffer, stagingBuffers, stagingMemories, sprite.image_);
+        commandBuffer, stagingBuffers, stagingMemories, sprite.image);
 
-    vkSprite.texture_ = std::move(texture);
+    vkSprite.texture = std::move(texture);
 
     CreateDescriptorSetForSprite(vkSprite);
 
-    endSingleTimeCommand(std::move(commandBuffer));
+    EndSingleTimeCommand(std::move(commandBuffer));
 
     sprites_[spriteHandle_] = std::move(vkSprite);
 

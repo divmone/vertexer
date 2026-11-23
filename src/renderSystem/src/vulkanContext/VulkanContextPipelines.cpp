@@ -1,31 +1,24 @@
-#include <PipelineBuilder.hpp>
+
 #include <chrono>
 #include <cmath>
 #include <fstream>
-#include <limits>
 #include <logSystem/Logger.hpp>
-#include <platformSystem/NativeSDLExtensions.hpp>
 #include <platformSystem/NativeVkSurfaceKHR.hpp>
 #include <renderSystem/VulkanContext.hpp>
 #include <resourceSystem/AssetLoader.hpp>
 #include <sceneSystem/Scene.hpp>
-#include <types/VulkanVertex3d.hpp>
-#include <typesSystem/EngineStats.hpp>
 
-#include "DescriptorSetLayoutBuilder.hpp"
 #include "FileSystem.hpp"
-#include "resourceSystem/types/Sprite.hpp"
+#include "renderSystem/detail/DescriptorSetLayoutBuilder.hpp"
+#include "renderSystem/detail/PipelineBuilder.hpp"
 #include "types/VulkanVertex2d.hpp"
+#include "types/VulkanVertex3d.hpp"
 
-struct EngineStats;
+void VulkanContext::CreateGraphicsPipeline() {
+    auto shaderModule = CreateShaderModule(
+        LoadShader(FS::GetFullPath(FS::FileType::eShader, "shader")));
 
-constexpr uint32_t MAX_BINDLESS_RESOURCES = 20000;
-
-void VulkanContext::createGraphicsPipeline() {
-    auto shaderModule = createShaderModule(
-        loadShader(FS::GetFullPath(FS::FileType::eShader, "shader")));
-
-    m_pipelineLayout = PipelineBuilder::createPipelineLayout(
+    pipelineLayout_ = PipelineBuilder::CreatePipelineLayout(
         device_,
         {{
             .stageFlags = vk::ShaderStageFlagBits::eAllGraphics,
@@ -33,50 +26,52 @@ void VulkanContext::createGraphicsPipeline() {
             .size = sizeof(PushConstantObject3d),
         }},
         {*descriptorSetLayout3d_, *blendingDescriptorSetLayout_});
+
     PipelineBuilder builder;
-    graphicsPipeline_ = builder.shaders(shaderModule)
-                            .colorFormat(m_swapChainSurfaceFormat.format)
-                            .depthFormat(depthFormat)
-                            .vertexType<VulkanVertex3d>()
-                            .depthTestOn()
-                            .Layout(m_pipelineLayout)
-                            .build(device_);
+    graphicsPipeline_ = builder.Shaders(shaderModule)
+                            .ColorFormat(swapChainSurfaceFormat_.format)
+                            .DepthFormat(depthFormat_)
+                            .VertexType<VulkanVertex3d>()
+                            .DepthTestOn()
+                            .Layout(pipelineLayout_)
+                            .Build(device_);
 
     PipelineBuilder blendPipelineBuilder;
-    blendingPipeline = blendPipelineBuilder.shaders(shaderModule)
-                           .colorFormat(m_swapChainSurfaceFormat.format)
-                           .depthFormat(depthFormat)
-                           .vertexType<VulkanVertex3d>()
-                           .blendingOn()
-                           .depthTestOff()
-                           .cullMode(vk::CullModeFlagBits::eBack)
-                           .frontFace(vk::FrontFace::eCounterClockwise)
-                           .Layout(m_pipelineLayout)
-                           .build(device_);
+    blendingPipeline_ = blendPipelineBuilder.Shaders(shaderModule)
+                           .ColorFormat(swapChainSurfaceFormat_.format)
+                           .DepthFormat(depthFormat_)
+                           .VertexType<VulkanVertex3d>()
+                           .BlendingOn()
+                           .DepthTestOff()
+                           .CullMode(vk::CullModeFlagBits::eBack)
+                           .FrontFace(vk::FrontFace::eCounterClockwise)
+                           .Layout(pipelineLayout_)
+                           .Build(device_);
 
-    shaderModule = createShaderModule(
-        loadShader(FS::GetFullPath(FS::FileType::eShader, "sky")));
-    skyPipelineLayout = PipelineBuilder::createPipelineLayout(
+    shaderModule = CreateShaderModule(
+        LoadShader(FS::GetFullPath(FS::FileType::eShader, "sky")));
+
+    skyPipelineLayout_ = PipelineBuilder::CreatePipelineLayout(
         device_, nullptr,
         {*descriptorSetLayout3d_, *blendingDescriptorSetLayout_});
 
     PipelineBuilder skyPipelineBuilder;
-    blendingPipeline = skyPipelineBuilder.shaders(shaderModule)
-                           .colorFormat(m_swapChainSurfaceFormat.format)
-                           .depthFormat(depthFormat)
-                           .vertexType<VulkanVertex3d>()
-                           .cullMode(vk::CullModeFlagBits::eBack)
-                           .frontFace(vk::FrontFace::eCounterClockwise)
-                           .Layout(m_pipelineLayout)
-                           .build(device_);
+    blendingPipeline_ = skyPipelineBuilder.Shaders(shaderModule)
+                           .ColorFormat(swapChainSurfaceFormat_.format)
+                           .DepthFormat(depthFormat_)
+                           .VertexType<VulkanVertex3d>()
+                           .CullMode(vk::CullModeFlagBits::eBack)
+                           .FrontFace(vk::FrontFace::eCounterClockwise)
+                           .Layout(pipelineLayout_)
+                           .Build(device_);
 }
 
 
 void VulkanContext::CreateGraphicsPipeline2d() {
-    auto shaderModule = createShaderModule(
-        loadShader(FS::GetFullPath(FS::FileType::eShader, "shader_2d")));
+    auto shaderModule = CreateShaderModule(
+        LoadShader(FS::GetFullPath(FS::FileType::eShader, "shader_2d")));
 
-    pipelineLayout2d_ = PipelineBuilder::createPipelineLayout(
+    pipelineLayout2d_ = PipelineBuilder::CreatePipelineLayout(
         device_,
         {{
             .stageFlags = vk::ShaderStageFlagBits::eAllGraphics,
@@ -87,18 +82,18 @@ void VulkanContext::CreateGraphicsPipeline2d() {
 
     PipelineBuilder builder;
 
-    graphicsPipeline2d_ = builder.shaders(shaderModule)
-                              .colorFormat(m_swapChainSurfaceFormat.format)
-                              .vertexType<VulkanVertex2d>()
-                              .depthTestOff()
-                              .depthFormat(depthFormat)
-                              .premultipliedBlendingOn()
+    graphicsPipeline2d_ = builder.Shaders(shaderModule)
+                              .ColorFormat(swapChainSurfaceFormat_.format)
+                              .VertexType<VulkanVertex2d>()
+                              .DepthTestOff()
+                              .DepthFormat(depthFormat_)
+                              .PremultipliedBlendingOn()
                               .Layout(pipelineLayout2d_)
-                              .build(device_);
+                              .Build(device_);
 }
 
 
-void VulkanContext::createBlendingPipeline() {
+void VulkanContext::CreateBlendingPipeline() {
     // auto shaderModule =
     // createShaderModule(loadShader("../shaders/shader.spv"));
     // vk::PipelineShaderStageCreateInfo vertexShaderStageCreateInfo{
@@ -227,12 +222,13 @@ void VulkanContext::createBlendingPipeline() {
 }
 
 
-void VulkanContext::createDescriptorSetLayout() {
+void VulkanContext::CreateDescriptorSetLayout() {
     DescriptorSetLayoutBuilder builder;
     builder.Add({.binding = 0,
                  .descriptorType = vk::DescriptorType::eUniformBuffer,
                  .descriptorCount = 1,
                  .stageFlags = vk::ShaderStageFlagBits::eAllGraphics});
+
     builder.Add({.binding = 1,
                  .descriptorType = vk::DescriptorType::eCombinedImageSampler,
                  .descriptorCount = 1,
@@ -243,7 +239,7 @@ void VulkanContext::createDescriptorSetLayout() {
 }
 
 
-void VulkanContext::createDescriptorSetLayout2d() {
+void VulkanContext::CreateDescriptorSetLayout2d() {
     DescriptorSetLayoutBuilder builder;
     descriptorSetLayout2d_ =
         builder
@@ -255,22 +251,22 @@ void VulkanContext::createDescriptorSetLayout2d() {
 }
 
 
-void VulkanContext::createUniformBuffers() {
+void VulkanContext::CreateUniformBuffers() {
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         vk::DeviceSize bufferSize = sizeof(UBObject);
         auto [buffer, buffMemory] =
-            createBuffer(bufferSize, vk::BufferUsageFlagBits::eUniformBuffer,
+            CreateBuffer(bufferSize, vk::BufferUsageFlagBits::eUniformBuffer,
                          vk::MemoryPropertyFlagBits::eHostVisible |
                              vk::MemoryPropertyFlagBits::eHostCoherent);
-        uniformBuffers.emplace_back(std::move(buffer));
-        uniformDevicesMemory.emplace_back(std::move(buffMemory));
-        uniformBuffersMapped.emplace_back(
-            uniformDevicesMemory.back().mapMemory(0, bufferSize));
+        uniformBuffers_.emplace_back(std::move(buffer));
+        uniformDevicesMemory_.emplace_back(std::move(buffMemory));
+        uniformBuffersMapped_.emplace_back(
+            uniformDevicesMemory_.back().mapMemory(0, bufferSize));
     }
 }
 
 
-void VulkanContext::updateUniformBuffer(uint32_t index) {
+void VulkanContext::UpdateUniformBuffer(uint32_t index) const {
     static auto startTime = std::chrono::high_resolution_clock::now();
 
     auto currentTime = std::chrono::high_resolution_clock::now();
@@ -284,20 +280,20 @@ void VulkanContext::updateUniformBuffer(uint32_t index) {
     float lightRadius = 5.0f;
     float lightHeight = 3.0f;
     float lightSpeed = glm::radians(90.0f);
-    ubo.lightPos =
-        glm::vec3(lightRadius * std::cos(time * lightSpeed),
-                  lightRadius * std::sin(time * lightSpeed), lightHeight);
+
+    ubo.lightPos = glm::vec3(
+        lightRadius * std::cos(time * lightSpeed),
+        lightRadius * std::sin(time * lightSpeed), lightHeight);
 
     ubo.lightColor = {1.0, 1.0, 1.0};
     ubo.ambient = {0.1, 0.1, 0.1};
     ubo.cameraPos = glm::vec3(glm::inverse(view_)[3]);
-    ;
 
-    std::memcpy(uniformBuffersMapped[index], &ubo, sizeof(ubo));
+    std::memcpy(uniformBuffersMapped_[index], &ubo, sizeof(ubo));
 }
 
 
-void VulkanContext::createDescriptorPool() {
+void VulkanContext::CreateDescriptorPool() {
     std::array poolSizes{
         vk::DescriptorPoolSize{.type = vk::DescriptorType::eUniformBuffer,
                                .descriptorCount = MAX_FRAMES_IN_FLIGHT},
@@ -315,7 +311,7 @@ void VulkanContext::createDescriptorPool() {
 }
 
 
-void VulkanContext::createBindlessDescriptorPool() {
+void VulkanContext::CreateBindlessDescriptorPool() {
     std::array poolSizes{
         vk::DescriptorPoolSize{
             .type = vk::DescriptorType::eCombinedImageSampler,
@@ -331,7 +327,7 @@ void VulkanContext::createBindlessDescriptorPool() {
 }
 
 
-void VulkanContext::createDescriptorSets() {
+void VulkanContext::CreateDescriptorSets() {
     std::vector<vk::DescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT,
                                                  *descriptorSetLayout3d_);
     vk::DescriptorSetAllocateInfo allocInfo{
@@ -339,14 +335,14 @@ void VulkanContext::createDescriptorSets() {
         .descriptorSetCount = static_cast<uint32_t>(layouts.size()),
         .pSetLayouts = layouts.data()};
 
-    descriptorSets = device_.allocateDescriptorSets(allocInfo);
+    descriptorSets_ = device_.allocateDescriptorSets(allocInfo);
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        vk::DescriptorBufferInfo bufferInfo{.buffer = uniformBuffers[i],
+        vk::DescriptorBufferInfo bufferInfo{.buffer = uniformBuffers_[i],
                                             .offset = 0,
                                             .range = sizeof(UBObject)};
         std::array writes{vk::WriteDescriptorSet{
-            .dstSet = descriptorSets[i],
+            .dstSet = descriptorSets_[i],
             .dstBinding = 0,
             .dstArrayElement = 0,
             .descriptorCount = 1,
@@ -357,7 +353,7 @@ void VulkanContext::createDescriptorSets() {
 }
 
 
-void VulkanContext::createBlendDescriptorSetLayout() {
+void VulkanContext::CreateBlendDescriptorSetLayout() {
     DescriptorSetLayoutBuilder builder;
 
     blendingDescriptorSetLayout_ =
@@ -370,27 +366,26 @@ void VulkanContext::createBlendDescriptorSetLayout() {
 }
 
 
-void VulkanContext::createTextureDescriptorSet() {
-    std::vector<vk::DescriptorSetLayout> layouts(textureCounter,
+void VulkanContext::CreateTextureDescriptorSet() {
+    std::vector<vk::DescriptorSetLayout> layouts(textureCounter_,
                                                  *blendingDescriptorSetLayout_);
     vk::DescriptorSetAllocateInfo allocInfo{
         .descriptorPool = generalDescriptorPool_,
         .descriptorSetCount = static_cast<uint32_t>(layouts.size()),
         .pSetLayouts = layouts.data()};
 
-    blendDescriptorSets = device_.allocateDescriptorSets(allocInfo);
+    blendDescriptorSets_ = device_.allocateDescriptorSets(allocInfo);
 
     size_t index = 0;
-    for (size_t i = 0; i < models_.size(); i++) {
-        for (size_t j = 0; j < models_[i].textures.size(); j++) {
-            const auto& texture = models_[i].textures[j];
+    for (auto & model : models_) {
+        for (const auto & texture : model.textures) {
             vk::DescriptorImageInfo imageInfo{
                 .sampler = texture.textureSampler,
                 .imageView = texture.textureImageView,
                 .imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal};
 
             std::array writes{vk::WriteDescriptorSet{
-                .dstSet = blendDescriptorSets[index++],
+                .dstSet = blendDescriptorSets_[index++],
                 .dstBinding = 0,
                 .dstArrayElement = 0,
                 .descriptorCount = 1,
@@ -402,8 +397,8 @@ void VulkanContext::createTextureDescriptorSet() {
 }
 
 
-vk::raii::ShaderModule VulkanContext::createShaderModule(
-    const std::vector<char>& code) {
+vk::raii::ShaderModule VulkanContext::CreateShaderModule(
+    const std::vector<char>& code) const {
     if (code.empty() || code.size() % sizeof(uint32_t) != 0) {
         LOG_ERROR("Invalid SPIR-V shader code size");
         throw std::runtime_error("Invalid SPIR-V shader code size");
@@ -423,7 +418,7 @@ vk::raii::ShaderModule VulkanContext::createShaderModule(
 };
 
 
-std::vector<char> VulkanContext::loadShader(const std::string& filename) {
+std::vector<char> VulkanContext::LoadShader(const std::string& filename) {
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
     if (!file) {
         LOG_ERROR("Failed to open file: {}", filename);
@@ -439,10 +434,12 @@ std::vector<char> VulkanContext::loadShader(const std::string& filename) {
 }
 
 
-void VulkanContext::createDescriptorSet2d() {}
+void VulkanContext::CreateDescriptorSet2d() {
+
+}
 
 
-void VulkanContext::createBindlessDescriptorSetLayout() {
+void VulkanContext::CreateBindlessDescriptorSetLayout() {
     DescriptorSetLayoutBuilder builder;
     bindlessDescriptorSetLayout_ =
         builder
@@ -453,7 +450,7 @@ void VulkanContext::createBindlessDescriptorSetLayout() {
 }
 
 
-void VulkanContext::createBindlessDescriptorSet() {
+void VulkanContext::CreateBindlessDescriptorSet() {
     //
     //
     // vk::DescriptorSetVariableDescriptorCountAllocateInfo variableInfo{
@@ -489,9 +486,9 @@ void VulkanContext::createBindlessDescriptorSet() {
 //void VulkanContext::DrawSprites(vk::raii::CommandBuffer& commandBuffer) {}
 
 
-void VulkanContext::finishLoading() {
-    createDescriptorSets();
-    createTextureDescriptorSet();
+void VulkanContext::FinishLoading() {
+    CreateDescriptorSets();
+    CreateTextureDescriptorSet();
     // createDescriptorSet2d();
     //  initImGui();
 }

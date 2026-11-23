@@ -7,13 +7,13 @@
 #include <array>
 class InputSystem {
 public:
-    void onKeyDown(SDL_Scancode scancode);
-    void onKeyUp(SDL_Scancode scancode);
-    void endFrame();
+    void OnKeyDown(SDL_Scancode scancode);
+    void OnKeyUp(SDL_Scancode scancode);
+    void EndFrame();
 
-    bool isHeld(SDL_Scancode scancode) const;
-    bool isPressed(SDL_Scancode scancode) const;
-    bool isReleased(SDL_Scancode scancode) const;
+    bool IsHeld(SDL_Scancode scancode) const;
+    bool IsPressed(SDL_Scancode scancode) const;
+    bool IsReleased(SDL_Scancode scancode) const;
 private:
     std::array<bool, SDL_SCANCODE_COUNT> currentKeys_{};
     std::array<bool, SDL_SCANCODE_COUNT> previousKeys_{};

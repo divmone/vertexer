@@ -4,10 +4,9 @@
 
 #include <FileSystem.hpp>
 #include <filesystem>
-
 #include <logSystem/Logger.hpp>
-
 #include "fileConfig.hpp"
+
 
 #if defined(_WIN32)
 #include <windows.h>
@@ -16,7 +15,6 @@
 #include <unistd.h>
 #elif defined(__APPLE__)
 #include <mach-o/dyld.h>
-
 #include <climits>
 #include <cstdlib>
 #endif
@@ -80,7 +78,7 @@ std::string FS::GetExePath() {
     }
 
     path[length] = '\0';
-    return std::string(path);
+    return {path};
 
 #elif defined(__APPLE__)
     char path[PATH_MAX];

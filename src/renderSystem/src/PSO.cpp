@@ -4,7 +4,7 @@
 
 #include <renderSystem/PSO.hpp>
 
-void PSO::createDescriptorSetLayout(
+void PSO::CreateDescriptorSetLayout(
     vk::raii::Device& device,
     vk::ArrayProxy<const vk::DescriptorSetLayoutBinding> bindings) {
     vk::DescriptorSetLayoutCreateInfo createInfo{
@@ -14,7 +14,7 @@ void PSO::createDescriptorSetLayout(
     descriptorSetLayout_ = vk::raii::DescriptorSetLayout(device, createInfo);
 }
 
-void PSO::createDescriptorPool(
+void PSO::CreateDescriptorPool(
     vk::raii::Device& device,
     vk::ArrayProxy<const vk::DescriptorPoolSize> poolSizes) {
     uint32_t maxSets = 0;
@@ -30,7 +30,7 @@ void PSO::createDescriptorPool(
     descriptorPool_ = vk::raii::DescriptorPool(device, poolInfo);
 }
 
-void PSO::createDescriptorSets(
+void PSO::CreateDescriptorSets(
     vk::raii::Device& device,
     vk::ArrayProxy<const vk::WriteDescriptorSet> writes) {
     std::vector layouts(framesCount_, *descriptorSetLayout_);

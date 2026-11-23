@@ -4,11 +4,12 @@
 
 #pragma once
 
+#include <cstdint>
 #include <string>
 
 class FS {
 public:
-    enum class FileType {
+    enum class FileType : std::uint8_t {
         eNone = 0,
         eShader,
         ePipelineCache,

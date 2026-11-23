@@ -4,26 +4,26 @@
 
 #include <inputSystem/InputSystem.hpp>
 
-void InputSystem::onKeyDown(SDL_Scancode scancode) {
+void InputSystem::OnKeyDown(SDL_Scancode scancode) {
     currentKeys_[scancode] = true;
 }
 
-void InputSystem::onKeyUp(SDL_Scancode scancode) {
+void InputSystem::OnKeyUp(SDL_Scancode scancode) {
     currentKeys_[scancode] = false;
 }
 
-void InputSystem::endFrame() {
+void InputSystem::EndFrame() {
     previousKeys_ = currentKeys_;
 }
 
-bool InputSystem::isHeld(SDL_Scancode scancode) const {
+bool InputSystem::IsHeld(SDL_Scancode scancode) const {
     return currentKeys_[scancode];
 }
 
-bool InputSystem::isPressed(SDL_Scancode scancode) const {
+bool InputSystem::IsPressed(SDL_Scancode scancode) const {
     return currentKeys_[scancode] && !previousKeys_[scancode];
 }
 
-bool InputSystem::isReleased(SDL_Scancode scancode) const {
+bool InputSystem::IsReleased(SDL_Scancode scancode) const {
     return !currentKeys_[scancode] && previousKeys_[scancode];
 }

@@ -19,7 +19,7 @@ public:
               int width,
               int height,
               bool isMaximize = false);
-    ~SDLWindow();
+    ~SDLWindow() override;
 
     void SetOnEvent(std::function<void(SDL_Event&)> handler);
     bool ProcessEvent() const;
