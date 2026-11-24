@@ -44,7 +44,7 @@ Scene SceneLoader::LoadSceneFromJSON(std::string_view path) {
         auto sceneObj = jsonScene["scene"];
         for (auto& jsonObj : sceneObj["objects"]) {
             const auto& name = jsonObj["name"].get<std::string>();
-            auto& obj = scene.AddObject(0 /*TODO*/, name);
+            auto&       obj = scene.AddObject(0 /*TODO*/, name);
 
             if (jsonObj.contains("position")) {
                 obj.transform.pos = ConvertJsonToVec3(jsonObj["position"]);
@@ -92,7 +92,7 @@ SceneMeshData SceneLoader::LoadSceneMeshData(const std::string& path) {
 
     try {
         size_t modelsCount = 0;
-        json jsonScene = json::parse(file);
+        json   jsonScene = json::parse(file);
 
         auto sceneObj = jsonScene["scene"];
 

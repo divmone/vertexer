@@ -2,14 +2,13 @@
 // Created by divmone on 7/23/2026.
 //
 
-#include <resourceSystem/AssetLoader.hpp>
-
 #include <fastgltf/core.hpp>
 #include <fastgltf/glm_element_traits.hpp>
 #include <fastgltf/tools.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <resourceSystem/AssetLoader.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <spdlog/spdlog.h>
@@ -29,11 +28,14 @@ glm::mat4 GetNodeLocalMatrix(const fastgltf::Node& node) {
     }
 
     const auto& trs = std::get<fastgltf::TRS>(node.transform);
-    glm::mat4 t = glm::translate(
-        glm::mat4(1.0f), glm::vec3(trs.translation.x(), trs.translation.y(),
-                                   trs.translation.z()));
-    glm::mat4 r = glm::mat4_cast(glm::quat(trs.rotation.w(), trs.rotation.x(),
-                                           trs.rotation.y(), trs.rotation.z()));
+    glm::mat4   t = glm::translate(
+        glm::mat4(1.0f),
+        glm::vec3(
+            trs.translation.x(), trs.translation.y(), trs.translation.z()));
+    glm::mat4 r = glm::mat4_cast(glm::quat(trs.rotation.w(),
+                                           trs.rotation.x(),
+                                           trs.rotation.y(),
+                                           trs.rotation.z()));
     glm::mat4 s =
         glm::scale(glm::mat4(1.0f),
                    glm::vec3(trs.scale.x(), trs.scale.y(), trs.scale.z()));
@@ -79,9 +81,10 @@ void ProcessMeshes(const fastgltf::Asset& gltf, Model& model) {
                 const auto& baseColorFactor =
                     gltf.materials[primitive.materialIndex]
                         .pbrData.baseColorFactor;
-                primitive.color =
-                    glm::vec4(baseColorFactor.x(), baseColorFactor.y(),
-                              baseColorFactor.z(), baseColorFactor.w());
+                primitive.color = glm::vec4(baseColorFactor.x(),
+                                            baseColorFactor.y(),
+                                            baseColorFactor.z(),
+                                            baseColorFactor.w());
 
                 if (baseColorTexture) {
                     const auto& texture =
@@ -114,7 +117,8 @@ void ProcessMeshes(const fastgltf::Asset& gltf, Model& model) {
                 const fastgltf::Accessor& normAccessor =
                     gltf.accessors[normIt->accessorIndex];
                 fastgltf::iterateAccessorWithIndex<glm::vec3>(
-                    gltf, normAccessor,
+                    gltf,
+                    normAccessor,
                     [&](const glm::vec3& normal, size_t index) {
                         model.vertices[index + initSizeVert].normal = normal;
                     });
@@ -130,7 +134,8 @@ void ProcessMeshes(const fastgltf::Asset& gltf, Model& model) {
                 const fastgltf::Accessor& texCoordAccessor =
                     gltf.accessors[texCoordIt->accessorIndex];
                 fastgltf::iterateAccessorWithIndex<glm::vec2>(
-                    gltf, texCoordAccessor,
+                    gltf,
+                    texCoordAccessor,
                     [&](const glm::vec2& texCoord, size_t index) {
                         model.vertices[index + initSizeVert].texCoord =
                             texCoord;
@@ -183,7 +188,7 @@ void ProcessNodes(const fastgltf::Asset& gltf, Model& model) {
 
 ImageData DecodeGltfImage(const fastgltf::Asset& gltf,
                           const fastgltf::Image& img,
-                          const std::string& parentPath) {
+                          const std::string&     parentPath) {
     return std::visit(
         fastgltf::visitor{
             [](const auto& arg) -> ImageData {
@@ -200,10 +205,13 @@ ImageData DecodeGltfImage(const fastgltf::Asset& gltf,
                 return AssetLoader::LoadImageDataFromFile(path);
             },
             [](const fastgltf::sources::Array& arr) -> ImageData {
-                int x, y, n;
+                int            x, y, n;
                 unsigned char* data = stbi_load_from_memory(
                     reinterpret_cast<const unsigned char*>(arr.bytes.data()),
-                    static_cast<int>(arr.bytes.size()), &x, &y, &n,
+                    static_cast<int>(arr.bytes.size()),
+                    &x,
+                    &y,
+                    &n,
                     STBI_rgb_alpha);
                 if (!data) {
                     LOG_ERROR("failed to decode embedded image (URI)");
@@ -222,13 +230,16 @@ ImageData DecodeGltfImage(const fastgltf::Asset& gltf,
                 const auto& bufferBytes =
                     std::get<fastgltf::sources::Array>(buffer.data);
 
-                const auto* ptr =
-                    reinterpret_cast<const unsigned char*>(
-                        bufferBytes.bytes.data() + bufferView.byteOffset);
+                const auto* ptr = reinterpret_cast<const unsigned char*>(
+                    bufferBytes.bytes.data() + bufferView.byteOffset);
 
-                int x, y, n;
+                int            x, y, n;
                 unsigned char* data = stbi_load_from_memory(
-                    ptr, static_cast<int>(bufferView.byteLength), &x, &y, &n,
+                    ptr,
+                    static_cast<int>(bufferView.byteLength),
+                    &x,
+                    &y,
+                    &n,
                     STBI_rgb_alpha);
                 if (!data) {
                     LOG_ERROR("failed to decode embedded image (BufferView)");
@@ -245,8 +256,8 @@ ImageData DecodeGltfImage(const fastgltf::Asset& gltf,
 }
 
 void ProcessImages(const fastgltf::Asset& gltf,
-                   Model& model,
-                   const std::string& parentPath) {
+                   Model&                 model,
+                   const std::string&     parentPath) {
     std::vector<std::future<ImageData>> futures;
     futures.reserve(gltf.images.size());
 
@@ -268,23 +279,26 @@ void ProcessImages(const fastgltf::Asset& gltf,
 }  // namespace
 
 Model AssetLoader::LoadModelFromGltf(const std::string& pathToFile) {
-    Model model;
+    Model            model;
     fastgltf::Parser parser;
-    auto gltfFile = fastgltf::GltfDataBuffer::FromPath(pathToFile);
+    auto             gltfFile = fastgltf::GltfDataBuffer::FromPath(pathToFile);
 
     if (gltfFile.error() != fastgltf::Error::None) {
-        LOG_ERROR("failed to load glTF file {}: {}", pathToFile,
+        LOG_ERROR("failed to load glTF file {}: {}",
+                  pathToFile,
                   getErrorMessage(gltfFile.error()).data());
         throw std::runtime_error(getErrorMessage(gltfFile.error()).data());
     }
     std::filesystem::path path(pathToFile);
-    std::string parentPath = path.parent_path().string();
+    std::string           parentPath = path.parent_path().string();
 
-    auto asset = parser.loadGltf(gltfFile.get(), path.parent_path(),
+    auto asset = parser.loadGltf(gltfFile.get(),
+                                 path.parent_path(),
                                  fastgltf::Options::LoadExternalBuffers);
 
     if (asset.error() != fastgltf::Error::None) {
-        LOG_ERROR("failed to parse glTF asset {}: {}", pathToFile,
+        LOG_ERROR("failed to parse glTF asset {}: {}",
+                  pathToFile,
                   getErrorMessage(asset.error()).data());
         throw std::runtime_error(getErrorMessage(asset.error()).data());
     }
@@ -296,7 +310,7 @@ Model AssetLoader::LoadModelFromGltf(const std::string& pathToFile) {
         throw std::runtime_error("glTF has no scenes");
     }
 
-    size_t sceneIndex = gltfAsset.defaultScene.value_or(0);
+    size_t      sceneIndex = gltfAsset.defaultScene.value_or(0);
     const auto& scene = gltfAsset.scenes[sceneIndex];
 
     ProcessMeshes(gltfAsset, model);
@@ -312,7 +326,7 @@ Model AssetLoader::LoadModelFromGltf(const std::string& pathToFile) {
 }
 
 ImageData AssetLoader::LoadImageDataFromFile(const std::string& pathToFile) {
-    int x, y, n;
+    int            x, y, n;
     unsigned char* data =
         stbi_load(pathToFile.c_str(), &x, &y, &n, STBI_rgb_alpha);
     if (!data) {

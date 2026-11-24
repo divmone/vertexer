@@ -13,22 +13,36 @@ add_engine_module(
         src/vulkanContext/VulkanContextDevice.cpp
         src/vulkanContext/VulkanContextPipelines.cpp
         src/vulkanContext/VulkanContextResources.cpp
-        src/vulkanContext/VulkanContextScene3D.cpp
-        src/vulkanContext/VulkanContextSprites2D.cpp
-        src/vulkanContext/VulkanContextUi.cpp
+        src/vulkanContext/VulkanContextFrame.cpp
+        include/renderSystem/2d/Vulkan2dContext.hpp
+        src/2d/Vulkan2dContext.cpp
+        src/2d/Vulkan2dUi.cpp
+        src/2d/Vulkan2dFrame.cpp
+        include/renderSystem/3d/Vulkan3dContext.hpp
+        src/3d/Vulkan3dContext.cpp
+        src/3d/Vulkan3dScene.cpp
         include/renderSystem/detail/PipelineBuilder.hpp src/PipelineBuilder.cpp
         include/renderSystem/PSO.hpp src/PSO.cpp
-        include/renderSystem/types/Providers.hpp
-        src/types/VulkanVertex3d.hpp
-        src/types/VulkanVertex2d.hpp
-        include/renderSystem/types/DrawCall.hpp
-        include/renderSystem/types/VulkanModel.hpp
-        include/renderSystem/types/VulkanTexture.hpp
         include/renderSystem/detail/DescriptorSetLayoutBuilder.hpp
         src/DescriptorSetLayoutBuilder.cpp
         include/renderSystem/detail/DescriptorPool.hpp
         src/DescriptorPool.cpp
-        include/renderSystem/types/VulkanSprite.hpp
+        # common types
+        include/renderSystem/types/common/Metadata.hpp
+        include/renderSystem/types/common/Providers.hpp
+        include/renderSystem/types/common/VulkanTexture.hpp
+        # 2d types
+        include/renderSystem/types/2d/DrawCall2d.hpp
+        include/renderSystem/types/2d/PushConstantObject2d.hpp
+        include/renderSystem/types/2d/VulkanSprite.hpp
+        include/renderSystem/types/2d/VulkanVertex2d.hpp
+        # 3d types
+        include/renderSystem/types/3d/DrawCall3d.hpp
+        include/renderSystem/types/3d/PushConstantObject3d.hpp
+        include/renderSystem/types/3d/PushConstantObjectBlend.hpp
+        include/renderSystem/types/3d/UBObject.hpp
+        include/renderSystem/types/3d/VulkanModel.hpp
+        include/renderSystem/types/3d/VulkanVertex3d.hpp
 )
 
 target_link_libraries(renderSystem fileSystem logSystem sceneSystem resourceSystem platformSystem typesSystem Vulkan::Vulkan glm)

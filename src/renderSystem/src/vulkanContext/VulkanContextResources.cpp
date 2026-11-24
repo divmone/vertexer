@@ -10,31 +10,33 @@
 void VulkanContext::CreateDepthResources() {
     depthFormat_ = FindDepthFormat();
     std::tie(depthImage_, depthImageMemory_) =
-        CreateImage(swapChainExtent_.width, swapChainExtent_.height,
-                    depthFormat_, vk::ImageTiling::eOptimal,
+        CreateImage(swapChainExtent_.width,
+                    swapChainExtent_.height,
+                    depthFormat_,
+                    vk::ImageTiling::eOptimal,
                     vk::ImageUsageFlagBits::eDepthStencilAttachment,
                     vk::MemoryPropertyFlagBits::eDeviceLocal);
-    depthImageView_ = CreateImageView(depthImage_, depthFormat_,
-                                     vk::ImageAspectFlagBits::eDepth);
+    depthImageView_ = CreateImageView(
+        depthImage_, depthFormat_, vk::ImageAspectFlagBits::eDepth);
 }
 
-
 std::pair<vk::raii::Image, vk::raii::DeviceMemory> VulkanContext::CreateImage(
-    uint32_t width,
-    uint32_t height,
-    vk::Format format,
-    vk::ImageTiling tiling,
-    vk::ImageUsageFlags usage,
+    uint32_t                width,
+    uint32_t                height,
+    vk::Format              format,
+    vk::ImageTiling         tiling,
+    vk::ImageUsageFlags     usage,
     vk::MemoryPropertyFlags properties) {
-    vk::ImageCreateInfo imageInfo{.imageType = vk::ImageType::e2D,
-                                  .format = format,
-                                  .extent = {.width=width, .height=height, .depth=1},
-                                  .mipLevels = 1,
-                                  .arrayLayers = 1,
-                                  .samples = vk::SampleCountFlagBits::e1,
-                                  .tiling = tiling,
-                                  .usage = usage,
-                                  .sharingMode = vk::SharingMode::eExclusive};
+    vk::ImageCreateInfo imageInfo{
+        .imageType = vk::ImageType::e2D,
+        .format = format,
+        .extent = {.width = width, .height = height, .depth = 1},
+        .mipLevels = 1,
+        .arrayLayers = 1,
+        .samples = vk::SampleCountFlagBits::e1,
+        .tiling = tiling,
+        .usage = usage,
+        .sharingMode = vk::SharingMode::eExclusive};
 
     auto image = vk::raii::Image(device_, imageInfo);
 
@@ -43,17 +45,15 @@ std::pair<vk::raii::Image, vk::raii::DeviceMemory> VulkanContext::CreateImage(
         .allocationSize = memRequirements.size,
         .memoryTypeIndex =
             FindMemoryType(memRequirements.memoryTypeBits, properties)};
-    auto imageMemory =
-        vk::raii::DeviceMemory(device_, allocInfo);
+    auto imageMemory = vk::raii::DeviceMemory(device_, allocInfo);
     image.bindMemory(imageMemory, 0);
 
     return {std::move(image), std::move(imageMemory)};
 }
 
-
 vk::raii::ImageView VulkanContext::CreateImageView(
-    const vk::Image& image,
-    vk::Format format,
+    const vk::Image&     image,
+    vk::Format           format,
     vk::ImageAspectFlags aspectFlags) const {
     vk::ImageViewCreateInfo viewInfo{
         .image = image,
@@ -67,15 +67,13 @@ vk::raii::ImageView VulkanContext::CreateImageView(
     return {device_, viewInfo};
 }
 
-
-uint32_t VulkanContext::FindMemoryType(uint32_t typeFilter,
-                                       vk::MemoryPropertyFlags properties) const {
+uint32_t VulkanContext::FindMemoryType(
+    uint32_t typeFilter, vk::MemoryPropertyFlags properties) const {
     vk::PhysicalDeviceMemoryProperties memProperties =
         physicalDevice_.getMemoryProperties();
 
     for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
-        if (
-            typeFilter & (1u << i) &&
+        if (typeFilter & (1u << i) &&
             (memProperties.memoryTypes[i].propertyFlags & properties) ==
                 properties) {
             return i;
@@ -86,12 +84,11 @@ uint32_t VulkanContext::FindMemoryType(uint32_t typeFilter,
     throw std::runtime_error("failed to find suitable memory type!");
 }
 
-
 void VulkanContext::CopyBufferToImage(vk::raii::CommandBuffer& commandBuffer,
-                                      const vk::raii::Buffer& buffer,
-                                      vk::raii::Image& image,
-                                      uint32_t width,
-                                      uint32_t height) {
+                                      const vk::raii::Buffer&  buffer,
+                                      vk::raii::Image&         image,
+                                      uint32_t                 width,
+                                      uint32_t                 height) {
     vk::BufferImageCopy region{
         .bufferOffset = 0,
         .bufferRowLength = 0,
@@ -106,16 +103,15 @@ void VulkanContext::CopyBufferToImage(vk::raii::CommandBuffer& commandBuffer,
         buffer, image, vk::ImageLayout::eTransferDstOptimal, region);
 }
 
-
 void VulkanContext::TransitionImageLayout(
-    vk::Image image,
-    vk::ImageLayout oldLayout,
-    vk::ImageLayout newLayout,
-    vk::AccessFlags2 srcAccessMask,
-    vk::AccessFlags2 dstAccessMask,
+    vk::Image               image,
+    vk::ImageLayout         oldLayout,
+    vk::ImageLayout         newLayout,
+    vk::AccessFlags2        srcAccessMask,
+    vk::AccessFlags2        dstAccessMask,
     vk::PipelineStageFlags2 srcStageMask,
     vk::PipelineStageFlags2 dstStageMask,
-    vk::ImageAspectFlags imageAspectFlags) const {
+    vk::ImageAspectFlags    imageAspectFlags) const {
     vk::ImageMemoryBarrier2 barrier = {
         .srcStageMask = srcStageMask,
         .srcAccessMask = srcAccessMask,
@@ -132,27 +128,25 @@ void VulkanContext::TransitionImageLayout(
                              .baseArrayLayer = 0,
                              .layerCount = 1}};
     vk::DependencyInfo dependencyInfo = {.dependencyFlags = {},
-                                          .imageMemoryBarrierCount = 1,
-                                          .pImageMemoryBarriers = &barrier};
+                                         .imageMemoryBarrierCount = 1,
+                                         .pImageMemoryBarriers = &barrier};
     commandBuffer_[frameIndex_].pipelineBarrier2(dependencyInfo);
 }
 
-
 void VulkanContext::TransitionImageLayout(
     vk::raii::CommandBuffer& commandBuffer,
-    const vk::raii::Image& image,
-    vk::ImageLayout oldLayout,
-    vk::ImageLayout newLayout) {
+    const vk::raii::Image&   image,
+    vk::ImageLayout          oldLayout,
+    vk::ImageLayout          newLayout) {
     vk::ImageMemoryBarrier barrier = {
         .oldLayout = oldLayout,
         .newLayout = newLayout,
         .srcQueueFamilyIndex = vk::QueueFamilyIgnored,
         .dstQueueFamilyIndex = vk::QueueFamilyIgnored,
         .image = image,
-        .subresourceRange = {
-            .aspectMask = vk::ImageAspectFlagBits::eColor,
-            .levelCount = 1,
-            .layerCount = 1}};
+        .subresourceRange = {.aspectMask = vk::ImageAspectFlagBits::eColor,
+                             .levelCount = 1,
+                             .layerCount = 1}};
 
     vk::PipelineStageFlags sourceStage;
     vk::PipelineStageFlags destinationStage;
@@ -189,14 +183,13 @@ void VulkanContext::TransitionImageLayout(
         LOG_ERROR("unsupported layout transition!");
         throw std::invalid_argument("unsupported layout transition!");
     }
-    commandBuffer.pipelineBarrier(sourceStage, destinationStage, {}, {},
-                                  nullptr, barrier);
+    commandBuffer.pipelineBarrier(
+        sourceStage, destinationStage, {}, {}, nullptr, barrier);
 }
 
-
 std::pair<vk::raii::Buffer, vk::raii::DeviceMemory> VulkanContext::CreateBuffer(
-    vk::DeviceSize size,
-    vk::BufferUsageFlags usage,
+    vk::DeviceSize          size,
+    vk::BufferUsageFlags    usage,
     vk::MemoryPropertyFlags properties) const {
     vk::BufferCreateInfo bufferCreateInfo{
         .size = size,
@@ -218,7 +211,6 @@ std::pair<vk::raii::Buffer, vk::raii::DeviceMemory> VulkanContext::CreateBuffer(
     return {std::move(buffer), std::move(bufferMemory)};
 }
 
-
 vk::raii::CommandBuffer VulkanContext::BeginSingleTimeCommand() const {
     vk::CommandBufferAllocateInfo allocInfo{
         .commandPool = commandPool_,
@@ -234,7 +226,6 @@ vk::raii::CommandBuffer VulkanContext::BeginSingleTimeCommand() const {
     return commandBuffer;
 }
 
-
 void VulkanContext::EndSingleTimeCommand(
     vk::raii::CommandBuffer&& commandBuffer) const {
     commandBuffer.end();
@@ -245,11 +236,10 @@ void VulkanContext::EndSingleTimeCommand(
     graphicsQueue_.waitIdle();
 }
 
-
 vk::Format VulkanContext::FindSupportedFormat(
     const std::vector<vk::Format>& candidates,
-    vk::ImageTiling tiling,
-    vk::FormatFeatureFlags features) const {
+    vk::ImageTiling                tiling,
+    vk::FormatFeatureFlags         features) const {
     for (const auto format : candidates) {
         vk::FormatProperties props =
             physicalDevice_.getFormatProperties(format);
@@ -266,27 +256,27 @@ vk::Format VulkanContext::FindSupportedFormat(
     throw std::runtime_error("failed to find supported format!");
 }
 
-
 vk::Format VulkanContext::FindDepthFormat() const {
     return FindSupportedFormat(
-        {vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint,
+        {vk::Format::eD32Sfloat,
+         vk::Format::eD32SfloatS8Uint,
          vk::Format::eD24UnormS8Uint},
         vk::ImageTiling::eOptimal,
         vk::FormatFeatureFlagBits::eDepthStencilAttachment);
 }
 
-
 VkTexture VulkanContext::CreateVkTextureFromImageData(
-    vk::raii::CommandBuffer& commandBuffer,
-    std::vector<vk::raii::Buffer>& stagingBuffers,
+    vk::raii::CommandBuffer&             commandBuffer,
+    std::vector<vk::raii::Buffer>&       stagingBuffers,
     std::vector<vk::raii::DeviceMemory>& stagingMemories,
-    const ImageData& imageData) {
+    const ImageData&                     imageData) {
     VkTexture texture;
-    auto imageSize = static_cast<vk::DeviceSize>(
+    auto      imageSize = static_cast<vk::DeviceSize>(
         imageData.width * imageData.height * imageData.channels);
 
     auto [stagingBuffer, stagingBufferMemory] =
-        CreateBuffer(imageSize, vk::BufferUsageFlagBits::eTransferSrc,
+        CreateBuffer(imageSize,
+                     vk::BufferUsageFlagBits::eTransferSrc,
                      vk::MemoryPropertyFlagBits::eHostVisible |
                          vk::MemoryPropertyFlagBits::eHostCoherent);
 
@@ -296,24 +286,30 @@ VkTexture VulkanContext::CreateVkTextureFromImageData(
     stagingBufferMemory.unmapMemory();
 
     std::tie(texture.textureImage, texture.textureImageMemory) = CreateImage(
-        imageData.width, imageData.height, vk::Format::eR8G8B8A8Srgb,
+        imageData.width,
+        imageData.height,
+        vk::Format::eR8G8B8A8Srgb,
         vk::ImageTiling::eOptimal,
         vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
         vk::MemoryPropertyFlagBits::eDeviceLocal);
 
-    TransitionImageLayout(commandBuffer, texture.textureImage,
+    TransitionImageLayout(commandBuffer,
+                          texture.textureImage,
                           vk::ImageLayout::eUndefined,
                           vk::ImageLayout::eTransferDstOptimal);
-    CopyBufferToImage(commandBuffer, stagingBuffer, texture.textureImage,
+    CopyBufferToImage(commandBuffer,
+                      stagingBuffer,
+                      texture.textureImage,
                       imageData.width,
                       imageData.height);
-    TransitionImageLayout(commandBuffer, texture.textureImage,
+    TransitionImageLayout(commandBuffer,
+                          texture.textureImage,
                           vk::ImageLayout::eTransferDstOptimal,
                           vk::ImageLayout::eShaderReadOnlyOptimal);
 
-    texture.textureImageView =
-        CreateImageView(texture.textureImage, vk::Format::eR8G8B8A8Srgb,
-                        vk::ImageAspectFlagBits::eColor);
+    texture.textureImageView = CreateImageView(texture.textureImage,
+                                               vk::Format::eR8G8B8A8Srgb,
+                                               vk::ImageAspectFlagBits::eColor);
 
     vk::SamplerCreateInfo samplerInfo{};
     texture.textureSampler = vk::raii::Sampler(device_, samplerInfo);
@@ -324,4 +320,3 @@ VkTexture VulkanContext::CreateVkTextureFromImageData(
 
     return texture;
 }
-

@@ -4,6 +4,9 @@
 
 #pragma once
 
+#include <array>
+#include <cstddef>
+#include <glm/glm.hpp>
 #include <typesSystem/Vertex3d.hpp>
 #include <vulkan/vulkan_raii.hpp>
 

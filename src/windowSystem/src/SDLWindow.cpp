@@ -12,22 +12,18 @@
 #include <windowSystem/SDLWindow.hpp>
 
 SDLWindow::SDLWindow(const char* title,
-                     const int width,
-                     const int height,
-                     bool isMaximize)
+                     const int   width,
+                     const int   height,
+                     bool        isMaximize)
     : title_(title), width_(width), height_(height) {
     if (!SDL_Init(SDL_INIT_VIDEO)) {
         LOG_ERROR("SDL_Init failed: %s", SDL_GetError());
         throw std::runtime_error("Failed to initialize SDL");
     }
 
-    const auto flags = isMaximize
-        ?
-        SDL_WINDOW_VULKAN    |
-        SDL_WINDOW_RESIZABLE |
-        SDL_WINDOW_MAXIMIZED
-        :
-        SDL_WINDOW_RESIZABLE | SDL_WINDOW_VULKAN;
+    const auto flags = isMaximize ? SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE |
+                                        SDL_WINDOW_MAXIMIZED
+                                  : SDL_WINDOW_RESIZABLE | SDL_WINDOW_VULKAN;
 
     window_ = SDL_CreateWindow(title_, width_, height_, flags);
 

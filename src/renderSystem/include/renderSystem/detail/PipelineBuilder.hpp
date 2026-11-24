@@ -27,25 +27,25 @@ public:
     PipelineBuilder& FrontFace(vk::FrontFace f);
     PipelineBuilder& CullMode(vk::CullModeFlags f);
 
-    PipelineBuilder& Shaders(const vk::ShaderModule& shaderModule,
-                             const char* vertName = "vertMain",
-                             const char* fragName = "fragMain");
+    PipelineBuilder&   Shaders(const vk::ShaderModule& shaderModule,
+                               const char*             vertName = "vertMain",
+                               const char*             fragName = "fragMain");
     vk::raii::Pipeline Build(const vk::raii::Device& device);
 
     static vk::raii::PipelineLayout CreatePipelineLayout(
-        const vk::raii::Device& device,
-        vk::ArrayProxy<const vk::PushConstantRange> ranges,
+        const vk::raii::Device&                       device,
+        vk::ArrayProxy<const vk::PushConstantRange>   ranges,
         vk::ArrayProxy<const vk::DescriptorSetLayout> layouts);
 private:
     vk::VertexInputBindingDescription vertexInputBindingDescription_;
     std::vector<vk::VertexInputAttributeDescription>
-        vertexInputAttributeDescription_;
+                       vertexInputAttributeDescription_;
     vk::PipelineLayout layout_;
-    vk::Format colorFormat_{vk::Format::eUndefined};
-    vk::Format depthFormat_{vk::Format::eUndefined};
+    vk::Format         colorFormat_{vk::Format::eUndefined};
+    vk::Format         depthFormat_{vk::Format::eUndefined};
 
     vk::CullModeFlags cullMode_{vk::CullModeFlagBits::eNone};
-    vk::FrontFace frontFace_{vk::FrontFace::eCounterClockwise};
+    vk::FrontFace     frontFace_{vk::FrontFace::eCounterClockwise};
 
     std::array<vk::PipelineShaderStageCreateInfo, 2> stages_;
     vk::PipelineVertexInputStateCreateInfo vertexInputStateCreateInfo_;

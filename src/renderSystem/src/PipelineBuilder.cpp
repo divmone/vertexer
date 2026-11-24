@@ -92,8 +92,8 @@ PipelineBuilder& PipelineBuilder::CullMode(vk::CullModeFlags f) {
 }
 
 PipelineBuilder& PipelineBuilder::Shaders(const vk::ShaderModule& shaderModule,
-                                          const char* vertName,
-                                          const char* fragName) {
+                                          const char*             vertName,
+                                          const char*             fragName) {
     stages_ = {{{.stage = vk::ShaderStageFlagBits::eVertex,
                  .module = shaderModule,
                  .pName = vertName},
@@ -167,14 +167,14 @@ vk::raii::Pipeline PipelineBuilder::Build(const vk::raii::Device& device) {
              .pColorAttachmentFormats = &colorFormat_,
              .depthAttachmentFormat = depthFormat_}};
 
-    return {
-        device, nullptr,
-        pipelineCreateInfoChain.get<vk::GraphicsPipelineCreateInfo>()};
+    return {device,
+            nullptr,
+            pipelineCreateInfoChain.get<vk::GraphicsPipelineCreateInfo>()};
 }
 
 vk::raii::PipelineLayout PipelineBuilder::CreatePipelineLayout(
-    const vk::raii::Device& device,
-    vk::ArrayProxy<const vk::PushConstantRange> ranges,
+    const vk::raii::Device&                       device,
+    vk::ArrayProxy<const vk::PushConstantRange>   ranges,
     vk::ArrayProxy<const vk::DescriptorSetLayout> layouts) {
     vk::PipelineLayoutCreateInfo createInfo{
         .setLayoutCount = layouts.size(),

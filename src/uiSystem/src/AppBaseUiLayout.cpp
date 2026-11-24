@@ -1,9 +1,7 @@
+#include <logSystem/Logger.hpp>
 #include <uiSystem/AppBaseUiLayout.hpp>
 
-#include <logSystem/Logger.hpp>
-
-bool AppBaseUiLayout::FromFile(Rml::Context& context,
-                               const std::string& path) {
+bool AppBaseUiLayout::FromFile(Rml::Context& context, const std::string& path) {
     document_ = context.LoadDocument(path);
     if (document_ == nullptr) {
         LOG_ERROR("Failed to load RmlUi layout: {}", path);

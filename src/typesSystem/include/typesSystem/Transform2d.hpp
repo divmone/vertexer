@@ -1,9 +1,12 @@
 #pragma once
 
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/matrix.hpp>
+
 struct Transform2d {
     glm::vec2 pos_{0.0f};
     glm::vec2 scale_{1.0f};
-    float rotateAngle_{0.0f};
+    float     rotateAngle_{0.0f};
     glm::mat4 model_{1.0f};
 
     glm::mat4 GetModelMat() const {

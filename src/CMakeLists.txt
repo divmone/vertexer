@@ -23,7 +23,7 @@ target_link_libraries(src windowSystem logSystem renderSystem sceneSystem inputS
 target_include_directories(src PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_executable(app main.cpp
-        uiSystem/include/uiSystem/RmlUi_Platform_SDL.h)
+        uiSystem/include/RmlUi_Platform_SDL.h)
 if(${WIN32})
     target_link_options(app PRIVATE -static -static-libgcc -static-libstdc++)
 endif()

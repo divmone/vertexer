@@ -4,6 +4,11 @@
 
 #pragma once
 
+#include <array>
+#include <cstddef>
+#include <typesSystem/Vertex3d.hpp>
+#include <vulkan/vulkan_raii.hpp>
+
 struct VulkanVertex2d {
     static vk::VertexInputBindingDescription GetBindingDescription() {
         return {.binding = 0,
@@ -12,7 +17,7 @@ struct VulkanVertex2d {
     }
 
     static std::array<vk::VertexInputAttributeDescription, 3>
-        GetAttributeDescriptions() {
+    GetAttributeDescriptions() {
         return {{{.location = 0,
                   .binding = 0,
                   .format = vk::Format::eR32G32Sfloat,

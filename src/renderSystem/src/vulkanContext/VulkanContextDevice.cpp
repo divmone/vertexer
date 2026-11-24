@@ -37,7 +37,6 @@ void VulkanContext::SelectPhysicalDevice() {
              physicalDevice_.getProperties().limits.maxPushConstantsSize);
 }
 
-
 void VulkanContext::CreateLogicalDevice() {
     std::vector<vk::QueueFamilyProperties> queueFamilyProperties =
         physicalDevice_.getQueueFamilyProperties();
@@ -51,12 +50,11 @@ void VulkanContext::CreateLogicalDevice() {
     queueFamilyIndex_ = static_cast<uint32_t>(std::distance(
         queueFamilyProperties.begin(), graphicsQueueFamilyProperty));
 
-    float queuePriority = 0.5f;
-    vk::DeviceQueueCreateInfo deviceQueueCreateInfo {
+    float                     queuePriority = 0.5f;
+    vk::DeviceQueueCreateInfo deviceQueueCreateInfo{
         .queueFamilyIndex = queueFamilyIndex_,
         .queueCount = 1,
-        .pQueuePriorities = &queuePriority
-    };
+        .pQueuePriorities = &queuePriority};
 
     vk::PhysicalDeviceFeatures deviceFeatures;
     vk::StructureChain<vk::PhysicalDeviceFeatures2,
@@ -64,44 +62,33 @@ void VulkanContext::CreateLogicalDevice() {
                        vk::PhysicalDeviceVulkan13Features,
                        vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT,
                        vk::PhysicalDeviceDescriptorIndexingFeatures>
-    featureChain = {
-        {.features = {.samplerAnisotropy = vk::True}},
-        {.shaderDrawParameters = true},
-        {
-            .synchronization2 = true,
-            .dynamicRendering = true
-        },
-        {.extendedDynamicState = true},
-        {
-            .descriptorBindingPartiallyBound = true,
-            .runtimeDescriptorArray = true
-        }
-    };
+        featureChain = {{.features = {.samplerAnisotropy = vk::True}},
+                        {.shaderDrawParameters = true},
+                        {.synchronization2 = true, .dynamicRendering = true},
+                        {.extendedDynamicState = true},
+                        {.descriptorBindingPartiallyBound = true,
+                         .runtimeDescriptorArray = true}};
 
-    const std::vector<const char*> requiredDeviceFeatures {
-        vk::KHRSwapchainExtensionName
-    };
+    const std::vector<const char*> requiredDeviceFeatures{
+        vk::KHRSwapchainExtensionName};
 
-    vk::DeviceCreateInfo deviceCreateInfo {
+    vk::DeviceCreateInfo deviceCreateInfo{
         .pNext = &featureChain.get<vk::PhysicalDeviceFeatures2>(),
         .queueCreateInfoCount = 1,
         .pQueueCreateInfos = &deviceQueueCreateInfo,
         .enabledExtensionCount =
             static_cast<uint32_t>(requiredDeviceFeatures.size()),
-        .ppEnabledExtensionNames = requiredDeviceFeatures.data()
-    };
+        .ppEnabledExtensionNames = requiredDeviceFeatures.data()};
 
     device_ = vk::raii::Device(physicalDevice_, deviceCreateInfo);
     graphicsQueue_ = vk::raii::Queue(device_, queueFamilyIndex_, 0);
 }
-
 
 void VulkanContext::CreateSurface() {
     const VkSurfaceKHR surface =
         GetNativeVkSurfaceKHR(instance_, nativeWindowHandler_);
     surfaceKHR_ = vk::raii::SurfaceKHR(instance_, surface);
 }
-
 
 vk::SurfaceFormatKHR VulkanContext::ChooseSwapSurfaceFormat(
     const std::vector<vk::SurfaceFormatKHR>& availableFormats) {
@@ -113,22 +100,19 @@ vk::SurfaceFormatKHR VulkanContext::ChooseSwapSurfaceFormat(
     return formatIt != availableFormats.end() ? *formatIt : availableFormats[0];
 }
 
-
 vk::PresentModeKHR VulkanContext::ChooseSwapPresentMode(
     const std::vector<vk::PresentModeKHR>& availablePresentModes) {
     assert(std::ranges::any_of(availablePresentModes, [](auto presentMode) {
         return presentMode == vk::PresentModeKHR::eFifo;
     }));
 
-    return std::ranges::any_of(
-        availablePresentModes,
-        [](const vk::PresentModeKHR value) {
-           return vk::PresentModeKHR::eMailbox == value;
-        })
-        ? vk::PresentModeKHR::eMailbox
-        : vk::PresentModeKHR::eFifo;
+    return std::ranges::any_of(availablePresentModes,
+                               [](const vk::PresentModeKHR value) {
+                                   return vk::PresentModeKHR::eMailbox == value;
+                               })
+               ? vk::PresentModeKHR::eMailbox
+               : vk::PresentModeKHR::eFifo;
 }
-
 
 vk::Extent2D VulkanContext::ChooseSwapExtent(
     const vk::SurfaceCapabilitiesKHR& capabilities) {
@@ -140,15 +124,13 @@ vk::Extent2D VulkanContext::ChooseSwapExtent(
     std::tie(width_, height_) = extentProvider_.getExtentSizes();
     LOG_ERROR("std::tie(width_, height_) = extentProvider_.GetExtentSizes();");
 
-    return {
-        .width = std::clamp<uint32_t>(width_, capabilities.minImageExtent.width,
-                                      capabilities.maxImageExtent.width),
-        .height =
-            std::clamp<uint32_t>(height_, capabilities.minImageExtent.height,
-                                 capabilities.maxImageExtent.height)
-    };
+    return {.width = std::clamp<uint32_t>(width_,
+                                          capabilities.minImageExtent.width,
+                                          capabilities.maxImageExtent.width),
+            .height = std::clamp<uint32_t>(height_,
+                                           capabilities.minImageExtent.height,
+                                           capabilities.maxImageExtent.height)};
 }
-
 
 uint32_t VulkanContext::ChooseSwapMinImageCount(
     const vk::SurfaceCapabilitiesKHR& surfaceCapabilities) {
@@ -160,8 +142,7 @@ uint32_t VulkanContext::ChooseSwapMinImageCount(
     return minImageCount;
 }
 
-
-void VulkanContext::CreateSwapchain() {
+void VulkanContext::CreateSwapChain() {
     auto surfaceCapabilities =
         physicalDevice_.getSurfaceCapabilitiesKHR(*surfaceKHR_);
 
@@ -195,7 +176,6 @@ void VulkanContext::CreateSwapchain() {
     swapChainImages_ = swapChain_.getImages();
 }
 
-
 void VulkanContext::CreateImageViews() {
     vk::ImageViewCreateInfo imageViewCreateInfo{
         .viewType = vk::ImageViewType::e2D,
@@ -216,7 +196,6 @@ void VulkanContext::CreateImageViews() {
     }
 }
 
-
 void VulkanContext::CreateCommandPool() {
     vk::CommandPoolCreateInfo commandPoolCreateInfo{
         .flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
@@ -224,7 +203,6 @@ void VulkanContext::CreateCommandPool() {
 
     commandPool_ = vk::raii::CommandPool(device_, commandPoolCreateInfo);
 }
-
 
 void VulkanContext::CreateCommandBuffer() {
     vk::CommandBufferAllocateInfo commandBufferAllocateInfo{
@@ -236,16 +214,15 @@ void VulkanContext::CreateCommandBuffer() {
         vk::raii::CommandBuffers(device_, commandBufferAllocateInfo);
 }
 
-
 void VulkanContext::CreateSyncObjects() {
     assert(presentCompleteSemaphore_.empty() &&
            renderFinishedSemaphore_.empty() && drawFence_.empty());
 
     for (size_t i = 0; i < swapChainImages_.size(); i++) {
-        presentCompleteSemaphore_.emplace_back(
-            device_, vk::SemaphoreCreateInfo());
-        renderFinishedSemaphore_.emplace_back(
-            device_, vk::SemaphoreCreateInfo());
+        presentCompleteSemaphore_.emplace_back(device_,
+                                               vk::SemaphoreCreateInfo());
+        renderFinishedSemaphore_.emplace_back(device_,
+                                              vk::SemaphoreCreateInfo());
     }
 
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
@@ -253,7 +230,6 @@ void VulkanContext::CreateSyncObjects() {
             device_, {.flags = vk::FenceCreateFlagBits::eSignaled}));
     }
 }
-
 
 void VulkanContext::CleanupSwapChain() {
     depthImageView_ = nullptr;
@@ -263,7 +239,6 @@ void VulkanContext::CleanupSwapChain() {
     swapChainImageViews_.clear();
     swapChain_ = nullptr;
 }
-
 
 void VulkanContext::RecreateContext() {
     vk::Extent2D extent;
@@ -280,9 +255,7 @@ void VulkanContext::RecreateContext() {
 
     device_.waitIdle();
     CleanupSwapChain();
-    CreateSwapchain();
+    CreateSwapChain();
     CreateImageViews();
     CreateDepthResources();
 }
-
-

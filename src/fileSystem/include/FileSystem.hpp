@@ -20,5 +20,5 @@ public:
     static std::string GetFullPath(FileType type, std::string_view path);
     constexpr static const char* GetProjectBinDir();
     constexpr static const char* GetProjectRootDir();
-    static std::string GetExePath();
+    static std::string           GetExePath();
 };

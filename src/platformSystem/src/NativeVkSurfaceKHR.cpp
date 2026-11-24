@@ -1,25 +1,24 @@
-#include <platformSystem/NativeVkSurfaceKHR.hpp>
-
 #include <logSystem/Logger.hpp>
+#include <platformSystem/NativeVkSurfaceKHR.hpp>
 #include <stdexcept>
 #include <type_traits>
 #include <variant>
 
 #if defined(_WIN64)
-#  if defined(_MSC_VER)
-#    pragma warning(push)
-#    pragma warning(disable: 4005)
-#  endif
-#  include <windows.h>
-#  if defined(_MSC_VER)
-#    pragma warning(pop)
-#  endif
-#  include <vulkan/vulkan_win32.h>
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4005)
+#endif
+#include <windows.h>
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
+#include <vulkan/vulkan_win32.h>
 #endif
 
 #if defined(__linux__)
-#include <vulkan/vulkan_wayland.h>
 #include <X11/Xlib.h>
+#include <vulkan/vulkan_wayland.h>
 #include <vulkan/vulkan_xlib.h>
 #include <wayland-client.h>
 #endif
@@ -34,9 +33,9 @@ namespace {
 VkSurfaceKHR CreateWin32Surface(const vk::raii::Instance& instance,
                                 const Win32WindowHandler& h) {
     VkWin32SurfaceCreateInfoKHR ci{};
-    ci.sType     = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+    ci.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
     ci.hinstance = static_cast<HINSTANCE>(h.hInstance);
-    ci.hwnd      = static_cast<HWND>(h.hWnd);
+    ci.hwnd = static_cast<HWND>(h.hWnd);
 
     VkSurfaceKHR s = VK_NULL_HANDLE;
     if (vkCreateWin32SurfaceKHR(*instance, &ci, nullptr, &s) != VK_SUCCESS) {
@@ -48,10 +47,10 @@ VkSurfaceKHR CreateWin32Surface(const vk::raii::Instance& instance,
 #endif
 
 #if defined(__linux__)
-VkSurfaceKHR CreateWaylandSurface(const vk::raii::Instance& instance,
+VkSurfaceKHR CreateWaylandSurface(const vk::raii::Instance&   instance,
                                   const WaylandWindowHandler& h) {
     VkWaylandSurfaceCreateInfoKHR ci{};
-    ci.sType   = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR;
+    ci.sType = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR;
     ci.display = static_cast<wl_display*>(h.display);
     ci.surface = static_cast<wl_surface*>(h.surface);
 
@@ -64,10 +63,10 @@ VkSurfaceKHR CreateWaylandSurface(const vk::raii::Instance& instance,
 }
 
 VkSurfaceKHR CreateX11Surface(const vk::raii::Instance& instance,
-                              const X11WindowHandler& h) {
+                              const X11WindowHandler&   h) {
     VkXlibSurfaceCreateInfoKHR ci{};
-    ci.sType  = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
-    ci.dpy    = static_cast<Display*>(h.display);
+    ci.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
+    ci.dpy = static_cast<Display*>(h.display);
     ci.window = static_cast<Window>(h.window);
 
     VkSurfaceKHR s = VK_NULL_HANDLE;
@@ -83,7 +82,7 @@ VkSurfaceKHR CreateX11Surface(const vk::raii::Instance& instance,
 VkSurfaceKHR CreateMacOSSurface(const vk::raii::Instance& instance,
                                 const MacOSWindowHandler& handler) {
     VkMetalSurfaceCreateInfoEXT ci{};
-    ci.sType     = VK_STRUCTURE_TYPE_METAL_SURFACE_CREATE_INFO_EXT;
+    ci.sType = VK_STRUCTURE_TYPE_METAL_SURFACE_CREATE_INFO_EXT;
     ci.pLayer = handler.layer;
 
     VkSurfaceKHR s = VK_NULL_HANDLE;
@@ -96,17 +95,16 @@ VkSurfaceKHR CreateMacOSSurface(const vk::raii::Instance& instance,
 }
 #endif
 
-} // namespace
+}  // namespace
 
-VkSurfaceKHR GetNativeVkSurfaceKHR(const vk::raii::Instance& instance,
+VkSurfaceKHR GetNativeVkSurfaceKHR(const vk::raii::Instance&  instance,
                                    const NativeWindowHandler& h) {
     return std::visit(
         [&](const auto& handler) -> VkSurfaceKHR {
             using T = std::decay_t<decltype(handler)>;
 
             if constexpr (std::is_same_v<T, std::monostate>) {
-                LOG_ERROR(
-                    "GetNativeVkSurfaceKHR: empty NativeWindowHandler");
+                LOG_ERROR("GetNativeVkSurfaceKHR: empty NativeWindowHandler");
                 throw std::runtime_error(
                     "GetNativeVkSurfaceKHR: empty NativeWindowHandler");
             }

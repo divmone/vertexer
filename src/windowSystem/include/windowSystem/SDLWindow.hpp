@@ -16,9 +16,9 @@ class SDLWindow : public INativeHandler,
                   public IExtentProvider {
 public:
     SDLWindow(const char* title,
-              int width,
-              int height,
-              bool isMaximize = false);
+              int         width,
+              int         height,
+              bool        isMaximize = false);
     ~SDLWindow() override;
 
     void SetOnEvent(std::function<void(SDL_Event&)> handler);
@@ -29,16 +29,15 @@ public:
     int GetWidth() const;
     int GetHeight() const;
 
-    NativeWindowHandler GetNativeHandler() const override;
+    NativeWindowHandler                     GetNativeHandler() const override;
     [[deprecated]] std::vector<const char*> GetExtensionNames() const override;
-    ExtentProvider GetExtentProvider() override;
+    ExtentProvider                          GetExtentProvider() override;
 private:
-    SDL_Window* window_;
+    SDL_Window*                     window_;
     std::function<void(SDL_Event&)> onEvent_;
-    const char* title_;
-    int width_;
-    int height_;
-
+    const char*                     title_;
+    int                             width_;
+    int                             height_;
 
 #if defined(__APPLE__)
     SDL_MetalView metalView_;

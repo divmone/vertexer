@@ -18,6 +18,6 @@ struct ExtensionProvider {
 //
 struct ExtentProvider1 {
     std::function<std::pair<uint32_t, uint32_t>()> getExtentSizes;
-    int width;
-    int height;
+    int                                            width;
+    int                                            height;
 };

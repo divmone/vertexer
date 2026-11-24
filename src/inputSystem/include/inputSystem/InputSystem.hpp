@@ -4,7 +4,9 @@
 
 #pragma once
 #include <SDL3/SDL.h>
+
 #include <array>
+
 class InputSystem {
 public:
     void OnKeyDown(SDL_Scancode scancode);

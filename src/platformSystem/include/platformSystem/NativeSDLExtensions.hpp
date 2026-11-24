@@ -1,19 +1,19 @@
 #pragma once
 
+#include <logSystem/Logger.hpp>
 #include <variant>
 #include <vector>
-#include <logSystem/Logger.hpp>
+
 #include "NativeWindowHandler.hpp"
 
-
-inline std::vector<const char*> GetNativeSDLExtensions(const NativeWindowHandler& h) {
+inline std::vector<const char*> GetNativeSDLExtensions(
+    const NativeWindowHandler& h) {
     return std::visit(
         [](const auto& handler) -> std::vector<const char*> {
             using T = std::decay_t<decltype(handler)>;
 
             if constexpr (std::is_same_v<T, std::monostate>) {
-                LOG_ERROR(
-                    "GetNativeSDLExtensions: empty NativeWindowHandler");
+                LOG_ERROR("GetNativeSDLExtensions: empty NativeWindowHandler");
                 throw std::runtime_error(
                     "GetNativeSDLExtensions: empty NativeWindowHandler");
             }
@@ -36,7 +36,7 @@ inline std::vector<const char*> GetNativeSDLExtensions(const NativeWindowHandler
 #endif
             else {
                 static_assert(sizeof(T) == 0,
-                    "Unhandled NativeWindowHandler alternative");
+                              "Unhandled NativeWindowHandler alternative");
             }
             return {};
         },

@@ -4,5 +4,5 @@
 
 #include "NativeWindowHandler.hpp"
 
-VkSurfaceKHR GetNativeVkSurfaceKHR(const vk::raii::Instance& instance,
+VkSurfaceKHR GetNativeVkSurfaceKHR(const vk::raii::Instance&  instance,
                                    const NativeWindowHandler& h);

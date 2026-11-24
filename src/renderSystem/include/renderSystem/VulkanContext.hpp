@@ -6,105 +6,40 @@
 #endif
 
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 #include <memory>
 #include <platformSystem/IExtentProvider.hpp>
 #include <platformSystem/NativeWindowHandler.hpp>
-#include <renderSystem/types/DrawCall.hpp>
-#include <renderSystem/types/DrawCall2d.hpp>
-#include <renderSystem/types/UiDrawCall.hpp>
-#include <renderSystem/types/VulkanModel.hpp>
+#include <renderSystem/types/3d/DrawCall3d.hpp>
+#include <renderSystem/types/3d/VulkanModel.hpp>
+#include <renderSystem/types/common/VulkanTexture.hpp>
+#include <resourceSystem/types/ImageData.hpp>
 #include <resourceSystem/types/Model.hpp>
 #include <span>
 #include <vulkan/vulkan_raii.hpp>
 
-#include "resourceSystem/types/Sprite.hpp"
-#include "resourceSystem/types/SpriteData.hpp"
-#include "types/VulkanSprite.hpp"
-
 struct EngineStats;
 class Scene;
+class Vulkan2dContext;
+class Vulkan3dContext;
 
 static constexpr int MAX_FRAMES_IN_FLIGHT{2};
 static constexpr int MAX_BINDLESS_RESOURCES{20000};
 
-#pragma region PushConstantsAndUniforms
-
-struct PushConstantObject3d {
-    alignas(16) glm::mat4 model;
-    alignas(16) glm::vec4 color;
-    alignas(16) uint32_t hasTexture;
-};
-
-struct PushConstantObject2d {
-    alignas(16) glm::mat4 model;
-    alignas(16) glm::mat4 view;
-    alignas(16) glm::mat4 proj;
-    alignas(16) glm::vec4 color;
-    alignas(16) uint32_t hasTexture;
-};
-
-struct PushConstantObjectBlend {
-    alignas(16) glm::mat4 model;
-    alignas(16) glm::vec4 color;
-};
-
-struct UBObject {
-    alignas(16) glm::vec3 lightPos;
-    alignas(16) glm::vec3 lightColor;
-    alignas(16) glm::vec3 ambient;
-    alignas(16) glm::vec3 cameraPos;
-    alignas(16) glm::mat4 view;
-    alignas(16) glm::mat4 proj;
-};
-
-#pragma endregion PushConstantsAndUniforms
-
 class VulkanContext {
+    friend class Vulkan2dContext;
+    friend class Vulkan3dContext;
+
 public:
     VulkanContext(const NativeWindowHandler& windowHandler,
-                        ExtentProvider       extentProvider);
+                  ExtentProvider             extentProvider);
     ~VulkanContext();
 
 #pragma region PublicApi
 
-    void RenderFrame(Scene& scene, EngineStats& stats);
-
     void RecreateContext();
     void ProcessMinimizedWindow();
 
-    void SetViewMatrix(const glm::mat4&);
-    void SetProjMatrix(const glm::mat4&);
-    void SetProj2dMatrix(const glm::mat4&);
-
-    uint32_t LoadAsset(const std::string& path);
-    void     FinishLoading();
-
-    SpriteHandle AddModel(const Model& model);
-    SpriteHandle AddSprite(const SpriteData& sprite);
-
-    void AddSpriteToPipeline(const Sprite& sprite);
-    void DrawSprites(EngineStats& stats);
-
-    // --- RmlUi / 2D UI rendering ---
-    uint32_t AddUiGeometry(std::span<const Vertex2d> vertices,
-                           std::span<const uint32_t> indices);
-    void     ReleaseUiGeometry(uint32_t geometryHandle);
-
-    uintptr_t AddUiTexture(const ImageData& image);
-    void      ReleaseUiTexture(uintptr_t textureHandle);
-
-    uintptr_t CreateOffscreenTarget(uint32_t width, uint32_t height);
-    void RenderSpriteToOffscreen(SpriteHandle sprite, uintptr_t targetHandle);
-    std::pair<uint32_t, uint32_t> GetUiTextureSize(
-        uintptr_t textureHandle) const;
-
-    void AddUiDrawCall(uint32_t         geometryHandle,
-                       const glm::mat4& model,
-                       uintptr_t        textureHandle,
-                       bool             hasTexture,
-                       bool             scissorEnabled,
-                       vk::Rect2D       scissor);
+    void DrawUi(EngineStats& stats, Vulkan2dContext& context);
 
 #pragma endregion PublicApi
 
@@ -116,61 +51,16 @@ private:
     void SelectPhysicalDevice();
     void CreateLogicalDevice();
     void CreateSurface();
-    void CreateSwapchain();
+    void CreateSwapChain();
     void CreateImageViews();
     void CreateCommandPool();
     void CreateCommandBuffer();
     void CreateSyncObjects();
-    void CreateUniformBuffers();
     void CreateDepthResources();
     void CreateDescriptorPool();
     void CreateBindlessDescriptorPool();
 
 #pragma endregion Initialization
-
-#pragma region Pipelines
-
-    void CreateDescriptorSetLayout();
-    void CreateDescriptorSetLayout2d();
-    void CreateBlendDescriptorSetLayout();
-    void CreateBindlessDescriptorSetLayout();
-
-    void CreateGraphicsPipeline();
-    void CreateGraphicsPipeline2d();
-    void CreateBlendingPipeline();
-
-#pragma endregion Pipelines
-
-#pragma region DescriptorSets
-
-    void CreateDescriptorSets();
-    void CreateDescriptorSet2d();
-    void CreateBlendDescriptorSet();
-    void CreateBindlessDescriptorSet();
-    void CreateTextureDescriptorSet();
-    void CreateDescriptorSetForSprite(VkSprite& sprite) const;
-    vk::raii::DescriptorSet CreateUiTextureDescriptorSet(
-        const VkTexture& texture) const;
-
-#pragma endregion DescriptorSets
-
-#pragma region Rendering
-
-    void RecordCommandBuffer2d(uint32_t imageIndex, EngineStats& stats);
-    void ProcessNodes(unsigned         root,
-                      const glm::mat4& mat,
-                      const VkModel&   model,
-                      uint32_t         modelIndex);
-    void DrawBlendNodes(unsigned         root,
-                        const glm::mat4& mat,
-                        const VkModel&   model);
-
-    void UpdateUniformBuffer(uint32_t index) const;
-
-    void RenderDrawCalls2d(vk::raii::CommandBuffer& commandBuffer) const;
-    void RenderUiDrawCalls(vk::raii::CommandBuffer& commandBuffer) const;
-
-#pragma endregion Rendering
 
 #pragma region Resources
 
@@ -185,19 +75,11 @@ private:
 
     void CreateTexture();
 
-    std::vector<VkTexture> CreateTexturesFromImages(
-        vk::raii::CommandBuffer&             commandBuffer,
-        std::vector<vk::raii::Buffer>&       stagingBuffers,
-        std::vector<vk::raii::DeviceMemory>& stagingMemories,
-        const Model&                         model);
-
     VkTexture CreateVkTextureFromImageData(
         vk::raii::CommandBuffer&             commandBuffer,
         std::vector<vk::raii::Buffer>&       stagingBuffers,
         std::vector<vk::raii::DeviceMemory>& stagingMemories,
         const ImageData&                     imageData);
-
-    VkModel LoadModel(const std::string& path);
 
 #pragma endregion Resources
 
@@ -257,14 +139,14 @@ private:
 
 #pragma region ImageLayoutAndFormats
 
-    void TransitionImageLayout(vk::Image image,
-                                 vk::ImageLayout         oldLayout,
-                                 vk::ImageLayout         newLayout,
-                                 vk::AccessFlags2        srcAccessMask,
-                                 vk::AccessFlags2        dstAccessMask,
-                                 vk::PipelineStageFlags2 srcStageMask,
-                                 vk::PipelineStageFlags2 dstStageMask,
-                                 vk::ImageAspectFlags imageAspectFlags) const;
+    void TransitionImageLayout(vk::Image               image,
+                               vk::ImageLayout         oldLayout,
+                               vk::ImageLayout         newLayout,
+                               vk::AccessFlags2        srcAccessMask,
+                               vk::AccessFlags2        dstAccessMask,
+                               vk::PipelineStageFlags2 srcStageMask,
+                               vk::PipelineStageFlags2 dstStageMask,
+                               vk::ImageAspectFlags    imageAspectFlags) const;
 
     void TransitionImageLayout(vk::raii::CommandBuffer& commandBuffer,
                                const vk::raii::Image&   image,
@@ -341,7 +223,6 @@ private:
 
     vk::raii::DescriptorSetLayout descriptorSetLayout3d_{nullptr};
     vk::raii::DescriptorSetLayout blendingDescriptorSetLayout_{nullptr};
-    vk::raii::DescriptorSetLayout descriptorSetLayout2d_{nullptr};
     vk::raii::DescriptorSetLayout bindlessDescriptorSetLayout_{nullptr};
 
 #pragma endregion DescriptorSetLayouts
@@ -350,9 +231,6 @@ private:
 
     vk::raii::Pipeline       graphicsPipeline_{nullptr};
     vk::raii::PipelineLayout pipelineLayout_{nullptr};
-
-    vk::raii::Pipeline       graphicsPipeline2d_{nullptr};
-    vk::raii::PipelineLayout pipelineLayout2d_{nullptr};
 
     vk::raii::Pipeline blendingPipeline_{nullptr};
 
@@ -390,7 +268,6 @@ private:
     vk::raii::DescriptorPool imguiDescriptorPool_{nullptr};
 
     std::vector<vk::raii::DescriptorSet> descriptorSets_;
-    std::vector<vk::raii::DescriptorSet> descriptorSets2d_;
     std::vector<vk::raii::DescriptorSet> blendDescriptorSets_;
     vk::raii::DescriptorSet              bindlessDescriptorSet_{nullptr};
 
@@ -420,48 +297,14 @@ private:
     glm::mat4 view_;
     glm::mat4 proj_;
 
-    glm::mat4 view2d_{1.0f};
-    glm::mat4 proj2d_;
-
 #pragma endregion Matrices
 
 #pragma region DrawCalls
 
-    std::vector<DrawCall>   drawCalls_;
-    std::vector<DrawCall>   blendDrawCalls_;
-    std::vector<DrawCall2d> drawCalls2d_;
+    std::vector<DrawCall3d> drawCalls_;
+    std::vector<DrawCall3d> blendDrawCalls_;
 
 #pragma endregion DrawCalls
-
-#pragma region Sprites
-
-    std::unordered_map<SpriteHandle, VkSprite> sprites_;
-    SpriteHandle                               spriteHandle_{0};
-
-#pragma endregion Sprites
-
-#pragma region UiResources
-
-    struct UiTextureEntry {
-        VkTexture               texture;
-        vk::raii::DescriptorSet descriptorSet{nullptr};
-        uint32_t                width{0};
-        uint32_t                height{0};
-    };
-
-    struct UiGeometryEntry {
-        vk::raii::Buffer       vertexBuffer{nullptr};
-        vk::raii::DeviceMemory vertexBufferMemory{nullptr};
-        vk::raii::Buffer       indexBuffer{nullptr};
-        vk::raii::DeviceMemory indexBufferMemory{nullptr};
-        uint32_t               indexCount{0};
-    };
-
-    std::vector<std::unique_ptr<UiTextureEntry>>  uiTextures_;
-    std::vector<std::unique_ptr<UiGeometryEntry>> uiGeometries_;
-    std::vector<UiDrawCall>                       uiDrawCalls_;
-
-#pragma endregion UiResources
 
 #pragma endregion Fields
 };

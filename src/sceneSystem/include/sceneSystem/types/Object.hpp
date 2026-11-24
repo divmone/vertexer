@@ -26,9 +26,9 @@ struct Transform3d {
 };
 
 struct Object {
-    size_t id;
+    size_t      id;
     std::string name;
-    size_t modelIndex;
+    size_t      modelIndex;
     Transform3d transform;
-    glm::vec3 color;
+    glm::vec3   color;
 };

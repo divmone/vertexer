@@ -2,8 +2,8 @@
 // Created by divmone on 2/3/2026.
 //
 
-#include <sceneSystem/Camera.hpp>
 #include <glm/ext/matrix_transform.hpp>
+#include <sceneSystem/Camera.hpp>
 
 const glm::mat4& Camera::GetLookAt() const {
     return view_;
