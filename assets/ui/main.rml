@@ -11,13 +11,20 @@
 		</div>
 
 		<div class="window window-a">
-			<div class="window-title">ghkjjjjjjj</div>
-			<div class="window-content"></div>
+			<div class="window-title">Image viewer</div>
+			<div class="window-content">
+				<button id="open-image" class="toolbar-button">Open image...</button>
+				<div id="image-status" class="image-status">No image selected</div>
+				<div class="image-frame">
+					<img id="image-preview" class="image-preview" src=""/>
+					<div id="image-placeholder" class="image-placeholder">No image selected</div>
+				</div>
+			</div>
 		</div>
 
 		<div class="window window-b">
 			<div class="window-title">xgfdfgdfgdfgdfg</div>
-			<div class="window-content"><img src="../test.jpg"></img></div>
+			<div class="window-content"></div>
 		</div>
 
 		<div class="window window-c">

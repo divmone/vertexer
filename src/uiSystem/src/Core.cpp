@@ -11,10 +11,9 @@
 #include <filesystem>
 #include <glm/gtc/matrix_transform.hpp>
 #include <logSystem/Logger.hpp>
+#include <mutex>
 #include <renderSystem/2d/Vulkan2dContext.hpp>
 #include <resourceSystem/AssetLoader.hpp>
-#include <resourceSystem/types/Sprite.hpp>
-#include <resourceSystem/types/SpriteData.hpp>
 #include <string_view>
 #include <typesSystem/Vertex3d.hpp>
 #include <uiSystem/UICore.hpp>
@@ -74,6 +73,14 @@ bool UI::Init(SDLWindow& window, Vulkan2dContext& vulkan2dContext) {
         return false;
     }
 
+    if (Rml::ElementDocument* document = layout_.GetDocument()) {
+        if (Rml::Element* button = document->GetElementById("open-image")) {
+            button->AddEventListener(Rml::EventId::Click, &openImageListener_);
+        } else {
+            LOG_ERROR("RmlUi: #open-image button not found");
+        }
+    }
+
     initialized_ = true;
     return true;
 }
@@ -104,6 +111,118 @@ bool UI::LoadLayout() {
     return layout_.FromFile(*context_, layoutPath);
 }
 
+namespace {
+// временная шиза от опенкода
+Rml::String EscapeRml(const std::string& text) {
+    Rml::String result;
+    result.reserve(text.size());
+
+    for (const char ch : text) {
+        switch (ch) {
+            case '&':
+                result += "&amp;";
+                break;
+            case '<':
+                result += "&lt;";
+                break;
+            case '>':
+                result += "&gt;";
+                break;
+            default:
+                result += ch;
+                break;
+        }
+    }
+
+    return result;
+}
+
+}  // namespace
+
+void UI::OpenImageListener::ProcessEvent(Rml::Event& event) {
+    (void)event;
+    if (ui != nullptr) {
+        ui->OpenImageDialog();
+    }
+}
+
+void UI::OpenImageDialog() {
+    // SDL requires the filter list to stay alive until the callback fires.
+    static constexpr SDL_DialogFileFilter FILTERS[] = {
+        {.name="Images",    .pattern="png;jpg;jpeg;bmp;tga;gif"},
+        {.name="All files", .pattern="*"},
+    };
+// мб это можно и без сдла, я потом обязательно подшарю
+    SDL_ShowOpenFileDialog(
+        &UI::OnImageFileChosen,
+        this,
+        window_ != nullptr ? window_->GetHandle() : nullptr,
+        FILTERS,
+        std::size(FILTERS),
+        nullptr,
+        false);
+}
+
+void UI::OnImageFileChosen(void*              userdata,
+                           const char* const* filelist,
+                           int                filter) {
+    (void)filter;
+
+    auto* ui = static_cast<UI*>(userdata);
+    if (ui == nullptr) {
+        return;
+    }
+
+    if (filelist == nullptr) {
+        LOG_ERROR("Image file dialog failed: {}", SDL_GetError());
+        return;
+    }
+
+    if (filelist[0] == nullptr) {
+        return;  // The user cancelled the dialog.
+    }
+
+    std::lock_guard<std::mutex> lock(ui->chosenImageMutex_);
+    ui->chosenImagePath_ = filelist[0];
+}
+
+void UI::ApplyChosenImage() {
+    // явно есть решение поэлегантнее но пока пусть будет
+    // хорошо видеть что картинки пашут без спрайтов чисто на rml
+    std::string path;
+    {
+        std::lock_guard<std::mutex> lock(chosenImageMutex_);
+        if (chosenImagePath_.empty()) {
+            return;
+        }
+        path.swap(chosenImagePath_);
+    }
+
+    Rml::ElementDocument* document = layout_.GetDocument();
+    if (document == nullptr) {
+        return;
+    }
+
+    Rml::Element* image = document->GetElementById("image-preview");
+    if (image == nullptr) {
+        return;
+    }
+
+    image->SetAttribute("src", Rml::String(path));
+    image->SetProperty("display", "block");
+
+    if (Rml::Element* placeholder =
+            document->GetElementById("image-placeholder")) {
+        placeholder->SetProperty("display", "none");
+    }
+
+    if (Rml::Element* status = document->GetElementById("image-status")) {
+        const std::string name =
+            std::filesystem::path(path).filename().string();
+        status->SetInnerRML(Rml::String("Loaded: ") + EscapeRml(name));
+    }
+}
+
 bool UI::ProcessEvent(SDL_Event& event) const {
     if (context_ == nullptr || window_ == nullptr)
         return false;
@@ -111,7 +230,9 @@ bool UI::ProcessEvent(SDL_Event& event) const {
     return RmlSDL::InputEventHandler(context_, window_->GetHandle(), event);
 }
 
-void UI::Update() const {
+void UI::Update() {
+    ApplyChosenImage();
+
     if (context_ != nullptr)
         context_->Update();
 }
@@ -212,6 +333,14 @@ Rml::TextureHandle UI::LoadTexture(Rml::Vector2i&     textureDimensions,
         return 0;
     }
 
+    int width = 0;
+    int height = 0;
+    int channels = 0;
+    if (stbi_info(fullPath.c_str(), &width, &height, &channels) == 0) {
+        LOG_ERROR("UI texture is not a readable image: {}", fullPath);
+        return 0;
+    }
+
     ImageData image = AssetLoader::LoadImageDataFromFile(fullPath);
     if (image.data == nullptr || image.width == 0 || image.height == 0) {
         LOG_ERROR("Failed to load UI texture: {}", fullPath);
@@ -259,6 +388,24 @@ void UI::EnableScissorRegion(bool enable) {
 
 void UI::SetScissorRegion(Rml::Rectanglei region) {
     scissorRegion_ = region;
+}
+
+void UI::JoinPath(Rml::String&       translatedPath,
+                  const Rml::String& documentPath,
+                  const Rml::String& path) {
+    // Paths returned by the native file dialog are absolute and must not be
+    // rebased onto the document directory.
+    const bool isAbsolute =
+        !path.empty() &&
+        (path.front() == '/' || path.front() == '\\' ||
+         (path.size() > 2 && path[1] == ':'));
+
+    if (isAbsolute) {
+        translatedPath = path;
+        return;
+    }
+
+    Rml::SystemInterface::JoinPath(translatedPath, documentPath, path);
 }
 
 double UI::GetElapsedTime() {
