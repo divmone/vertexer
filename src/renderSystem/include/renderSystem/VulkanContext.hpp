@@ -39,7 +39,7 @@ public:
     void RecreateContext();
     void ProcessMinimizedWindow();
 
-    void DrawUi(EngineStats& stats, Vulkan2dContext& context);
+    void Present2d(EngineStats& stats, Vulkan2dContext& context);
 
 #pragma endregion PublicApi
 

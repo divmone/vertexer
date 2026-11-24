@@ -3,7 +3,7 @@
 #include <renderSystem/VulkanContext.hpp>
 #include <typesSystem/EngineStats.hpp>
 
-void VulkanContext::DrawUi(EngineStats& stats, Vulkan2dContext& context) {
+void VulkanContext::Present2d(EngineStats& stats, Vulkan2dContext& context) {
     auto fenceResult =
         device_.waitForFences(*drawFence_[frameIndex_], vk::True, UINT64_MAX);
     if (fenceResult != vk::Result::eSuccess) {

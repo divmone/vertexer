@@ -46,7 +46,7 @@ void App::Run() {
 
         ui_.Update();
         ui_.Render();
-        vulkanContext_.DrawUi(stats, vulkan2dContext_);
+        vulkanContext_.Present2d(stats, vulkan2dContext_);
 
         auto end = high_resolution_clock::now();
         auto elapsed = std::chrono::duration_cast<microseconds>(end - now);
