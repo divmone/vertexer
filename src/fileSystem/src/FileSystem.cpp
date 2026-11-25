@@ -50,7 +50,7 @@ std::string FS::GetFullPath(FileType type, std::string_view path) {
             throw std::runtime_error("Unknown file type");
     }
 
-    return fullPath.string();
+    return fullPath.generic_string();
 }
 
 constexpr const char* FS::GetProjectBinDir() {
