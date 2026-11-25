@@ -1,0 +1,41 @@
+<rml>
+<head>
+	<title>Vertexer UI</title>
+	<link type="text/rcss" href="main.rcss"/>
+</head>
+<body>
+	<div id="desktop">
+		<div id="header">
+			<span id="header-title">Vertexer</span>
+			<span id="header-subtitle">zgssdfhyrtdrsd</span>
+		</div>
+
+		<div class="window window-a">
+			<div class="window-title">Image viewer</div>
+			<div class="window-content">
+				<button id="open-image" class="toolbar-button">Open image...</button>
+				<div id="image-status" class="image-status">No image selected</div>
+				<div class="image-frame">
+					<img id="image-preview" class="image-preview" src=""/>
+					<div id="image-placeholder" class="image-placeholder">No image selected</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="window window-b">
+			<div class="window-title">xgfdfgdfgdfgdfg</div>
+			<div class="window-content"></div>
+		</div>
+
+		<div class="window window-c">
+			<div class="window-title">hjgdfsa</div>
+			<div class="window-content"></div>
+		</div>
+
+		<div class="window window-d">
+			<div class="window-title">dfsdf</div>
+			<div class="window-content"></div>
+		</div>
+	</div>
+</body>
+</rml>

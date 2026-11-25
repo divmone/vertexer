@@ -7,8 +7,8 @@
 #include <vulkan/vulkan_raii.hpp>
 
 struct VkTexture {
-    vk::raii::Image textureImage{nullptr};
+    vk::raii::Image        textureImage{nullptr};
     vk::raii::DeviceMemory textureImageMemory{nullptr};
-    vk::raii::ImageView textureImageView{nullptr};
-    vk::raii::Sampler textureSampler{nullptr};
+    vk::raii::ImageView    textureImageView{nullptr};
+    vk::raii::Sampler      textureSampler{nullptr};
 };

@@ -24,7 +24,7 @@ struct PushConstant{
 VertexOutput vertMain(uniform PushConstant pc, VertexInput input)
 {
     VertexOutput output;
-    output.color = input.color;
+    output.color = input.color * pc.color;
     output.texCoord = input.texCoord;
 
     output.position = mul(
@@ -39,9 +39,9 @@ VertexOutput vertMain(uniform PushConstant pc, VertexInput input)
 [shader("fragment")]
 float4 fragMain(uniform PushConstant pc, VertexOutput inVert) : SV_Target
 {
-    float4 color = pc.color;
-    if (pc.hasTexture){
-        color = texSampler.Sample(inVert.texCoord);
+    float4 color = inVert.color;
+    if (pc.hasTexture) {
+        color *= texSampler.Sample(inVert.texCoord);
     }
     return color;
 }

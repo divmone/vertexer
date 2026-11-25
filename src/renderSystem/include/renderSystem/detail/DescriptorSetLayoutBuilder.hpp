@@ -13,7 +13,7 @@ public:
 
     vk::raii::DescriptorSetLayout Build(const vk::raii::Device& device);
     vk::raii::DescriptorSetLayout BuildBindLess(const vk::raii::Device& device);
-    DescriptorSetLayoutBuilder& Add(
+    DescriptorSetLayoutBuilder&   Add(
         const vk::DescriptorSetLayoutBinding& binding);
 private:
     std::vector<vk::DescriptorSetLayoutBinding> bindings_;

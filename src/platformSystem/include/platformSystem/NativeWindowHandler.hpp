@@ -1,14 +1,14 @@
 #pragma once
 
-#include <variant>
-#include <cstdint>
-
 #include <SDL3/SDL.h>
+
+#include <cstdint>
+#include <variant>
 
 #if defined(__linux)
 struct X11WindowHandler {
     void*    display = nullptr;
-    uint32_t window  = 0;
+    uint32_t window = 0;
 };
 
 struct WaylandWindowHandler {
@@ -19,14 +19,14 @@ struct WaylandWindowHandler {
 
 #if defined(_WIN64)
 struct Win32WindowHandler {
-    void* hWnd      = nullptr;
+    void* hWnd = nullptr;
     void* hInstance = nullptr;
 };
 #endif
 
 #if defined(__APPLE__)
 struct MacOSWindowHandler {
-    void* nsWindow      = nullptr;
+    void* nsWindow = nullptr;
     void* layer = nullptr;
 };
 #endif
@@ -42,13 +42,13 @@ using NativeWindowHandler = std::variant<
 #if defined(__APPLE__)
     MacOSWindowHandler,
 #endif
-    std::monostate
->;
+    std::monostate>;
 
 NativeWindowHandler GetNativeWindowHandler(SDL_Window* window);
 
 #if defined(__APPLE__)
-NativeWindowHandler GetNativeWindowHandler(SDL_Window* window, SDL_MetalView view);
+NativeWindowHandler GetNativeWindowHandler(SDL_Window*   window,
+                                           SDL_MetalView view);
 #endif
 struct INativeHandler {
     virtual ~INativeHandler() = default;

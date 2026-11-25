@@ -6,10 +6,12 @@
 
 #include <stb_image.h>
 
+#include <cstdint>
+
 struct ImageData {
     ImageData() = default;
 
-    ImageData(const ImageData&)            = delete;
+    ImageData(const ImageData&) = delete;
     ImageData& operator=(const ImageData&) = delete;
 
     ImageData(ImageData&& oth) noexcept
@@ -23,9 +25,9 @@ struct ImageData {
     ImageData& operator=(ImageData&& oth) noexcept {
         if (this != &oth) {
             stbi_image_free(data);
-            data     = oth.data;
-            width    = oth.width;
-            height   = oth.height;
+            data = oth.data;
+            width = oth.width;
+            height = oth.height;
             channels = oth.channels;
             oth.data = nullptr;
         }

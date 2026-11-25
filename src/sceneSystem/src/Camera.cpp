@@ -2,61 +2,60 @@
 // Created by divmone on 2/3/2026.
 //
 
+#include <glm/ext/matrix_transform.hpp>
 #include <sceneSystem/Camera.hpp>
 
-#include <glm/ext/matrix_transform.hpp>
-
-const glm::mat4& Camera::getLookAt() {
-    return view;
+const glm::mat4& Camera::GetLookAt() const {
+    return view_;
 }
 
-void Camera::setYaw(float yaw) {
-    Camera::yaw = yaw;
+void Camera::SetYaw(float yaw) {
+    yaw_ = yaw;
 }
 
-void Camera::setPitch(float pitch) {
-    Camera::pitch = pitch;
+void Camera::SetPitch(float pitch) {
+    pitch_ = pitch;
 }
 
-void Camera::updateMatrix() {
-    view = glm::lookAt(position, position + front, up);
+void Camera::UpdateMatrix() {
+    view_ = glm::lookAt(position_, position_ + front_, up_);
 }
 
-void Camera::updateVectors() {
+void Camera::UpdateVectors() {
     glm::vec3 tempFront;
-    tempFront.x = std::cos(glm::radians(yaw)) * std::cos(glm::radians(pitch));
-    tempFront.y = std::sin(glm::radians(pitch));
-    tempFront.z = std::sin(glm::radians(yaw)) * std::cos(glm::radians(pitch));
-    front = glm::normalize(tempFront);
-    right = glm::normalize(glm::cross(front, worldUp));
-    up = glm::normalize(glm::cross(right, front));
+    tempFront.x = std::cos(glm::radians(yaw_)) * std::cos(glm::radians(pitch_));
+    tempFront.y = std::sin(glm::radians(pitch_));
+    tempFront.z = std::sin(glm::radians(yaw_)) * std::cos(glm::radians(pitch_));
+    front_ = glm::normalize(tempFront);
+    right_ = glm::normalize(glm::cross(front_, worldUp_));
+    up_ = glm::normalize(glm::cross(right_, front_));
 }
 
-void Camera::setPosition(const glm::vec3& pos) {
-    position = pos;
+void Camera::SetPosition(const glm::vec3& pos) {
+    position_ = pos;
 }
 
-void Camera::move(CameraDirections direction, float deltaTime) {
+void Camera::Move(CameraDirections direction, float deltaTime) {
     glm::vec3 wishDir{0.0f};
 
     switch (direction) {
         case CameraDirections::Forward:
-            wishDir -= front;
+            wishDir -= front_;
             break;
         case CameraDirections::Backward:
-            wishDir += front;
+            wishDir += front_;
             break;
         case CameraDirections::Right:
-            wishDir += right;
+            wishDir += right_;
             break;
         case CameraDirections::Left:
-            wishDir -= right;
+            wishDir -= right_;
             break;
         case CameraDirections::Up:
-            wishDir += up;
+            wishDir += up_;
             break;
         case CameraDirections::Down:
-            wishDir -= up;
+            wishDir -= up_;
             break;
     }
 
@@ -66,33 +65,33 @@ void Camera::move(CameraDirections direction, float deltaTime) {
         wishDir = glm::normalize(wishDir);
     }
 
-    velocity += wishDir * speed * deltaTime;
+    velocity_ += wishDir * speed_ * deltaTime;
 }
 
-void Camera::update(const float deltaTime) {
+void Camera::Update(const float deltaTime) {
     const float damping = std::pow(0.1f, deltaTime);
-    velocity *= damping;
-    position += velocity * deltaTime;
-    updateVectors();
-    updateMatrix();
+    velocity_ *= damping;
+    position_ += velocity_ * deltaTime;
+    UpdateVectors();
+    UpdateMatrix();
 }
 
-const glm::vec3& Camera::getPosition() const {
-    return position;
+const glm::vec3& Camera::GetPosition() const {
+    return position_;
 }
 
-std::pair<float, float> Camera::getRotation() const {
-    return {yaw, pitch};
+std::pair<float, float> Camera::GetRotation() const {
+    return {yaw_, pitch_};
 }
 
-void Camera::rotate(int deltaX, int deltaY) {
-    yaw -= (float)deltaX * sensitivity;
-    pitch += (float)deltaY * sensitivity;
+void Camera::Rotate(int deltaX, int deltaY) {
+    yaw_ -= static_cast<float>(deltaX) * sensitivity_;
+    pitch_ += static_cast<float>(deltaY) * sensitivity_;
 
-    if (pitch > 89.0f) {
-        pitch = 89.0f;
+    if (pitch_ > 89.0f) {
+        pitch_ = 89.0f;
     }
-    if (pitch < -89.0f) {
-        pitch = -89.0f;
+    if (pitch_ < -89.0f) {
+        pitch_ = -89.0f;
     }
 }

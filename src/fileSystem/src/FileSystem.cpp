@@ -4,7 +4,6 @@
 
 #include <FileSystem.hpp>
 #include <filesystem>
-
 #include <logSystem/Logger.hpp>
 
 #include "fileConfig.hpp"
@@ -24,7 +23,7 @@
 std::string FS::GetFullPath(FileType type, std::string_view path) {
     std::filesystem::path fullPath{GetExePath()};
     fullPath = fullPath.parent_path();
-    fullPath /= "../../..";
+    fullPath /= "../../../";
 
     switch (type) {
         case FileType::eShader:
@@ -64,7 +63,7 @@ constexpr const char* FS::GetProjectRootDir() {
 
 std::string FS::GetExePath() {
 #if defined(_WIN32)
-    char path[MAX_PATH];
+    char  path[MAX_PATH];
     DWORD length = GetModuleFileNameA(NULL, path, MAX_PATH);
     if (length == 0) {
         return "";
@@ -73,17 +72,17 @@ std::string FS::GetExePath() {
     return std::string(path);
 
 #elif defined(__linux__)
-    char path[PATH_MAX];
+    char    path[PATH_MAX];
     ssize_t length = readlink("/proc/self/exe", path, sizeof(path) - 1);
     if (length == -1) {
         return "";
     }
 
     path[length] = '\0';
-    return std::string(path);
+    return {path};
 
 #elif defined(__APPLE__)
-    char path[PATH_MAX];
+    char     path[PATH_MAX];
     uint32_t size = sizeof(path);
     if (_NSGetExecutablePath(path, &size) == 0) {
         char real_path[PATH_MAX];

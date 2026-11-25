@@ -1,36 +1,96 @@
 ---
-Checks: >
-  -*,
-  bugprone-*,
-  modernize-*,
-  performance-*,
-  readability-identifier-naming,
-  -modernize-use-trailing-return-type,
-  -modernize-use-nodiscard
-
+Checks:
+  - '-*'
+  - 'bugprone-*'
+  - 'modernize-*'
+  - 'performance-*'
+  - 'readability-identifier-naming'
+  - '-modernize-use-trailing-return-type'
+  - '-modernize-use-nodiscard'
+  - '-modernize-avoid-c-arrays'
+  - '-misc-const-correctness'
 
 CheckOptions:
-  # Классы и структуры: MyClass
+  # --- Классы и структуры: MyClass ---
   - key: readability-identifier-naming.ClassCase
     value: CamelCase
   - key: readability-identifier-naming.StructCase
     value: CamelCase
+  - key: readability-identifier-naming.UnionCase
+    value: CamelCase
+  - key: readability-identifier-naming.EnumCase
+    value: CamelCase
+  - key: readability-identifier-naming.TypeAliasCase
+    value: CamelCase
+  - key: readability-identifier-naming.TypedefCase
+    value: CamelCase
+  - key: readability-identifier-naming.TemplateParameterCase
+    value: CamelCase
+  - key: readability-identifier-naming.ConceptCase
+    value: CamelCase
 
-  # Методы и функции: DoSomething()
+  # --- Пространства имён: MyNamespace ---
+  - key: readability-identifier-naming.NamespaceCase
+    value: CamelCase
+
+  # --- Методы и функции: DoSomething() ---
   - key: readability-identifier-naming.MethodCase
     value: CamelCase
   - key: readability-identifier-naming.FunctionCase
     value: CamelCase
+  - key: readability-identifier-naming.VirtualMethodCase
+    value: CamelCase
 
-  # Переменные и параметры: myVar
+  # --- Переменные и параметры: myVar ---
   - key: readability-identifier-naming.VariableCase
     value: camelBack
   - key: readability-identifier-naming.ParameterCase
     value: camelBack
+  - key: readability-identifier-naming.LocalVariableCase
+    value: camelBack
+  - key: readability-identifier-naming.GlobalVariableCase
+    value: camelBack
 
-  # Приватные поля: myVar_
+  # --- Поля класса ---
   - key: readability-identifier-naming.PrivateMemberCase
     value: camelBack
   - key: readability-identifier-naming.PrivateMemberSuffix
-    value: _
-...
+    value: '_'
+  - key: readability-identifier-naming.ProtectedMemberCase
+    value: camelBack
+  - key: readability-identifier-naming.ProtectedMemberSuffix
+    value: '_'
+  - key: readability-identifier-naming.PublicMemberCase
+    value: camelBack
+
+  # --- Приватные/защищённые методы (если нужен суффикс _) ---
+  - key: readability-identifier-naming.PrivateMethodCase
+    value: CamelCase
+
+  # --- Глобальные константы: AAA_BBB_CCCC ---
+  - key: readability-identifier-naming.GlobalConstantCase
+    value: UPPER_CASE
+
+  # --- Static-константы (namespace/file scope) ---
+  - key: readability-identifier-naming.StaticConstantCase
+    value: UPPER_CASE
+
+  # --- Константы-члены класса ---
+  - key: readability-identifier-naming.ClassConstantCase
+    value: UPPER_CASE
+
+  # --- Лямбда-параметры ---
+  - key: readability-identifier-naming.LambdaParameterCase
+    value: camelBack
+
+  # --- Макросы ---
+  - key: readability-identifier-naming.MacroDefinitionCase
+    value: UPPER_CASE
+
+  # --- Игнорирование ---
+  - key: readability-identifier-naming.IgnoreMainLikeFunctions
+    value: true
+  - key: readability-identifier-naming.IgnoreFailedSplit
+    value: false
+
+HeaderFilterRegex: '^(src|include)/.*'

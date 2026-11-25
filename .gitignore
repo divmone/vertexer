@@ -8,6 +8,9 @@
 /out
 /tests/cmake-build-debug/
 /.vscode
-/docs/html
-/docs/latex
-/docs/man
+/.zed
+/.cache
+/compile_commands.json
+/.openidea
+/logs
+/docs

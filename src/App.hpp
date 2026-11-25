@@ -6,9 +6,10 @@
 
 #include <inputSystem/InputSystem.hpp>
 #include <logSystem/Logger.hpp>
+#include <renderSystem/2d/Vulkan2dContext.hpp>
+#include <renderSystem/3d/Vulkan3dContext.hpp>
 #include <renderSystem/VulkanContext.hpp>
-#include <sceneSystem/Camera.hpp>
-#include <sceneSystem/Scene.hpp>
+#include <uiSystem/UICore.hpp>
 #include <windowSystem/SDLWindow.hpp>
 
 class App {
@@ -18,22 +19,15 @@ public:
 
     void Run();
 private:
-    bool isRunning_;
-    Logger logger_;
-    SDLWindow window_;
-    VulkanContext vulkanContext_;
-    Camera camera_{glm::vec3(5, 5, 0), {0, 1, 0}, 180, -45};
-    Scene scene_;
-    InputSystem inputSystem_;
+    bool            isRunning_;
+    Logger          logger_;
+    SDLWindow       window_;
+    VulkanContext   vulkanContext_;
+    Vulkan2dContext vulkan2dContext_;
+    Vulkan3dContext vulkan3dContext_;
+    InputSystem     inputSystem_;
+    UI              ui_;
 
-    bool pressedKeys_[256]{false};
-    float lastX{0.0f};
-    float lastY{0.0f};
-    // std::unordered_set<SDL_Keycode> pressedKeys_;
     void Init();
-    void InitScene();
-    void Update(float deltaTime);
-
-    std::vector<Sprite> sprites_;
-    void DrawSprites();
+    void Update(float deltaTime) const;
 };

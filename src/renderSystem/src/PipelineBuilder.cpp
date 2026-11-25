@@ -2,7 +2,7 @@
 // Created by divmone on 9/24/2026.
 //
 
-#include <PipelineBuilder.hpp>
+#include <renderSystem/detail/PipelineBuilder.hpp>
 
 PipelineBuilder& PipelineBuilder::Layout(
     const vk::PipelineLayout& pipelineLayout) {
@@ -10,17 +10,17 @@ PipelineBuilder& PipelineBuilder::Layout(
     return *this;
 }
 
-PipelineBuilder& PipelineBuilder::colorFormat(vk::Format f) {
+PipelineBuilder& PipelineBuilder::ColorFormat(vk::Format f) {
     colorFormat_ = f;
     return *this;
 }
 
-PipelineBuilder& PipelineBuilder::depthFormat(vk::Format f) {
+PipelineBuilder& PipelineBuilder::DepthFormat(vk::Format f) {
     depthFormat_ = f;
     return *this;
 }
 
-PipelineBuilder& PipelineBuilder::blendingOn() {
+PipelineBuilder& PipelineBuilder::BlendingOn() {
     colorBlendAttachment_ = {
         .blendEnable = vk::True,
         .srcColorBlendFactor = vk::BlendFactor::eSrcAlpha,
@@ -36,7 +36,23 @@ PipelineBuilder& PipelineBuilder::blendingOn() {
     return *this;
 }
 
-PipelineBuilder& PipelineBuilder::blendingOff() {
+PipelineBuilder& PipelineBuilder::PremultipliedBlendingOn() {
+    colorBlendAttachment_ = {
+        .blendEnable = vk::True,
+        .srcColorBlendFactor = vk::BlendFactor::eOne,
+        .dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha,
+        .colorBlendOp = vk::BlendOp::eAdd,
+        .srcAlphaBlendFactor = vk::BlendFactor::eOne,
+        .dstAlphaBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha,
+        .alphaBlendOp = vk::BlendOp::eAdd,
+        .colorWriteMask =
+            vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
+            vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA};
+
+    return *this;
+}
+
+PipelineBuilder& PipelineBuilder::BlendingOff() {
     colorBlendAttachment_ = {.blendEnable = vk::False,
                              .colorWriteMask = vk::ColorComponentFlagBits::eR |
                                                vk::ColorComponentFlagBits::eG |
@@ -45,7 +61,7 @@ PipelineBuilder& PipelineBuilder::blendingOff() {
     return *this;
 }
 
-PipelineBuilder& PipelineBuilder::depthTestOn() {
+PipelineBuilder& PipelineBuilder::DepthTestOn() {
     depthStencilStateInfo_ = {.depthTestEnable = vk::True,
                               .depthWriteEnable = vk::True,
                               .depthCompareOp = vk::CompareOp::eLess,
@@ -55,29 +71,29 @@ PipelineBuilder& PipelineBuilder::depthTestOn() {
     return *this;
 }
 
-PipelineBuilder& PipelineBuilder::depthTestOff() {
+PipelineBuilder& PipelineBuilder::DepthTestOff() {
     depthStencilStateInfo_ = {
-        .depthTestEnable = vk::True,
+        .depthTestEnable = vk::False,
         .depthWriteEnable = vk::False,
-        .depthCompareOp = vk::CompareOp::eLess,
+        .depthCompareOp = vk::CompareOp::eAlways,
     };
 
     return *this;
 }
 
-PipelineBuilder& PipelineBuilder::frontFace(vk::FrontFace f) {
+PipelineBuilder& PipelineBuilder::FrontFace(vk::FrontFace f) {
     frontFace_ = f;
     return *this;
 }
 
-PipelineBuilder& PipelineBuilder::cullMode(vk::CullModeFlags f) {
+PipelineBuilder& PipelineBuilder::CullMode(vk::CullModeFlags f) {
     cullMode_ |= f;
     return *this;
 }
 
-PipelineBuilder& PipelineBuilder::shaders(const vk::ShaderModule& shaderModule,
-                                          const char* vertName,
-                                          const char* fragName) {
+PipelineBuilder& PipelineBuilder::Shaders(const vk::ShaderModule& shaderModule,
+                                          const char*             vertName,
+                                          const char*             fragName) {
     stages_ = {{{.stage = vk::ShaderStageFlagBits::eVertex,
                  .module = shaderModule,
                  .pName = vertName},
@@ -88,7 +104,7 @@ PipelineBuilder& PipelineBuilder::shaders(const vk::ShaderModule& shaderModule,
     return *this;
 }
 
-vk::raii::Pipeline PipelineBuilder::build(const vk::raii::Device& device) {
+vk::raii::Pipeline PipelineBuilder::Build(const vk::raii::Device& device) {
     constexpr std::array dynamicStates{vk::DynamicState::eViewport,
                                        vk::DynamicState::eScissor};
 
@@ -151,14 +167,14 @@ vk::raii::Pipeline PipelineBuilder::build(const vk::raii::Device& device) {
              .pColorAttachmentFormats = &colorFormat_,
              .depthAttachmentFormat = depthFormat_}};
 
-    return vk::raii::Pipeline(
-        device, nullptr,
-        pipelineCreateInfoChain.get<vk::GraphicsPipelineCreateInfo>());
+    return {device,
+            nullptr,
+            pipelineCreateInfoChain.get<vk::GraphicsPipelineCreateInfo>()};
 }
 
-vk::raii::PipelineLayout PipelineBuilder::createPipelineLayout(
-    const vk::raii::Device& device,
-    vk::ArrayProxy<const vk::PushConstantRange> ranges,
+vk::raii::PipelineLayout PipelineBuilder::CreatePipelineLayout(
+    const vk::raii::Device&                       device,
+    vk::ArrayProxy<const vk::PushConstantRange>   ranges,
     vk::ArrayProxy<const vk::DescriptorSetLayout> layouts) {
     vk::PipelineLayoutCreateInfo createInfo{
         .setLayoutCount = layouts.size(),
@@ -166,5 +182,5 @@ vk::raii::PipelineLayout PipelineBuilder::createPipelineLayout(
         .pushConstantRangeCount = ranges.size(),
         .pPushConstantRanges = ranges.data()};
 
-    return vk::raii::PipelineLayout(device, createInfo);
+    return {device, createInfo};
 }

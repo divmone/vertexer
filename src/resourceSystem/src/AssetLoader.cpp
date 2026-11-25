@@ -2,14 +2,13 @@
 // Created by divmone on 7/23/2026.
 //
 
-#include <resourceSystem/AssetLoader.hpp>
-
 #include <fastgltf/core.hpp>
 #include <fastgltf/glm_element_traits.hpp>
 #include <fastgltf/tools.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <resourceSystem/AssetLoader.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <spdlog/spdlog.h>
@@ -22,18 +21,21 @@
 #include <typesSystem/Vertex3d.hpp>
 
 namespace {
-glm::mat4 getNodeLocalMatrix(const fastgltf::Node& node) {
+glm::mat4 GetNodeLocalMatrix(const fastgltf::Node& node) {
     if (const auto* matrix =
             std::get_if<fastgltf::math::fmat4x4>(&node.transform)) {
         return glm::make_mat4(matrix->data());
     }
 
     const auto& trs = std::get<fastgltf::TRS>(node.transform);
-    glm::mat4 t = glm::translate(
-        glm::mat4(1.0f), glm::vec3(trs.translation.x(), trs.translation.y(),
-                                   trs.translation.z()));
-    glm::mat4 r = glm::mat4_cast(glm::quat(trs.rotation.w(), trs.rotation.x(),
-                                           trs.rotation.y(), trs.rotation.z()));
+    glm::mat4   t = glm::translate(
+        glm::mat4(1.0f),
+        glm::vec3(
+            trs.translation.x(), trs.translation.y(), trs.translation.z()));
+    glm::mat4 r = glm::mat4_cast(glm::quat(trs.rotation.w(),
+                                           trs.rotation.x(),
+                                           trs.rotation.y(),
+                                           trs.rotation.z()));
     glm::mat4 s =
         glm::scale(glm::mat4(1.0f),
                    glm::vec3(trs.scale.x(), trs.scale.y(), trs.scale.z()));
@@ -41,7 +43,7 @@ glm::mat4 getNodeLocalMatrix(const fastgltf::Node& node) {
     return t * r * s;
 }
 
-[[maybe_unused]] glm::vec3 computeBoundsCenter(
+[[maybe_unused]] glm::vec3 ComputeBoundsCenter(
     const std::vector<Vertex3d>& vertices) {
     if (vertices.empty()) {
         return glm::vec3(0.0f);
@@ -58,7 +60,7 @@ glm::mat4 getNodeLocalMatrix(const fastgltf::Node& node) {
     return (minBounds + maxBounds) * 0.5f;
 }
 
-void processMeshes(const fastgltf::Asset& gltf, Model& model) {
+void ProcessMeshes(const fastgltf::Asset& gltf, Model& model) {
     for (const auto& gltfMesh : gltf.meshes) {
         Mesh mesh;
         for (const auto& gltfPrimitive : gltfMesh.primitives) {
@@ -79,9 +81,10 @@ void processMeshes(const fastgltf::Asset& gltf, Model& model) {
                 const auto& baseColorFactor =
                     gltf.materials[primitive.materialIndex]
                         .pbrData.baseColorFactor;
-                primitive.color =
-                    glm::vec4(baseColorFactor.x(), baseColorFactor.y(),
-                              baseColorFactor.z(), baseColorFactor.w());
+                primitive.color = glm::vec4(baseColorFactor.x(),
+                                            baseColorFactor.y(),
+                                            baseColorFactor.z(),
+                                            baseColorFactor.w());
 
                 if (baseColorTexture) {
                     const auto& texture =
@@ -101,12 +104,12 @@ void processMeshes(const fastgltf::Asset& gltf, Model& model) {
 
             const fastgltf::Accessor& accessor =
                 gltf.accessors[posIt->accessorIndex];
-            size_t initSizeVert = model.vertices_.size();
-            model.vertices_.resize(initSizeVert + accessor.count);
+            size_t initSizeVert = model.vertices.size();
+            model.vertices.resize(initSizeVert + accessor.count);
 
             fastgltf::iterateAccessorWithIndex<glm::vec3>(
                 gltf, accessor, [&](const glm::vec3& position, size_t index) {
-                    model.vertices_[index + initSizeVert].pos = position;
+                    model.vertices[index + initSizeVert].pos = position;
                 });
 
             auto normIt = gltfPrimitive.findAttribute("NORMAL");
@@ -114,13 +117,14 @@ void processMeshes(const fastgltf::Asset& gltf, Model& model) {
                 const fastgltf::Accessor& normAccessor =
                     gltf.accessors[normIt->accessorIndex];
                 fastgltf::iterateAccessorWithIndex<glm::vec3>(
-                    gltf, normAccessor,
+                    gltf,
+                    normAccessor,
                     [&](const glm::vec3& normal, size_t index) {
-                        model.vertices_[index + initSizeVert].normal = normal;
+                        model.vertices[index + initSizeVert].normal = normal;
                     });
             } else {
                 for (size_t i = 0; i < accessor.count; ++i) {
-                    model.vertices_[i + initSizeVert].normal =
+                    model.vertices[i + initSizeVert].normal =
                         glm::vec3(0.0f, 0.0f, 1.0f);
                 }
             }
@@ -130,14 +134,15 @@ void processMeshes(const fastgltf::Asset& gltf, Model& model) {
                 const fastgltf::Accessor& texCoordAccessor =
                     gltf.accessors[texCoordIt->accessorIndex];
                 fastgltf::iterateAccessorWithIndex<glm::vec2>(
-                    gltf, texCoordAccessor,
+                    gltf,
+                    texCoordAccessor,
                     [&](const glm::vec2& texCoord, size_t index) {
-                        model.vertices_[index + initSizeVert].texCoord =
+                        model.vertices[index + initSizeVert].texCoord =
                             texCoord;
                     });
             } else {
                 for (size_t i = 0; i < accessor.count; ++i) {
-                    model.vertices_[i + initSizeVert].texCoord =
+                    model.vertices[i + initSizeVert].texCoord =
                         glm::vec2(0.0f, 0.0f);
                 }
             }
@@ -165,25 +170,25 @@ void processMeshes(const fastgltf::Asset& gltf, Model& model) {
             }
         }
 
-        model.meshes_.push_back(std::move(mesh));
+        model.meshes.push_back(std::move(mesh));
     }
 }
 
-void processNodes(const fastgltf::Asset& gltf, Model& model) {
+void ProcessNodes(const fastgltf::Asset& gltf, Model& model) {
     for (auto& gltfNode : gltf.nodes) {
         Node node;
         node.meshIndex =
             gltfNode.meshIndex.has_value() ? gltfNode.meshIndex.value() : -1;
-        node.transformation = getNodeLocalMatrix(gltfNode);
+        node.transformation = GetNodeLocalMatrix(gltfNode);
         node.children = std::vector<uint32_t>(gltfNode.children.begin(),
                                               gltfNode.children.end());
-        model.nodes_.push_back(std::move(node));
+        model.nodes.push_back(std::move(node));
     }
 }
 
-ImageData decodeGltfImage(const fastgltf::Asset& gltf,
+ImageData DecodeGltfImage(const fastgltf::Asset& gltf,
                           const fastgltf::Image& img,
-                          const std::string& parentPath) {
+                          const std::string&     parentPath) {
     return std::visit(
         fastgltf::visitor{
             [](const auto& arg) -> ImageData {
@@ -197,13 +202,16 @@ ImageData decodeGltfImage(const fastgltf::Asset& gltf,
                 std::string relative(uri.uri.path().begin(),
                                      uri.uri.path().end());
                 std::string path = parentPath + "/" + relative;
-                return AssetLoader::loadImageDataFromFile(path);
+                return AssetLoader::LoadImageDataFromFile(path);
             },
             [](const fastgltf::sources::Array& arr) -> ImageData {
-                int x, y, n;
+                int            x, y, n;
                 unsigned char* data = stbi_load_from_memory(
                     reinterpret_cast<const unsigned char*>(arr.bytes.data()),
-                    static_cast<int>(arr.bytes.size()), &x, &y, &n,
+                    static_cast<int>(arr.bytes.size()),
+                    &x,
+                    &y,
+                    &n,
                     STBI_rgb_alpha);
                 if (!data) {
                     LOG_ERROR("failed to decode embedded image (URI)");
@@ -222,38 +230,41 @@ ImageData decodeGltfImage(const fastgltf::Asset& gltf,
                 const auto& bufferBytes =
                     std::get<fastgltf::sources::Array>(buffer.data);
 
-                const unsigned char* ptr =
-                    reinterpret_cast<const unsigned char*>(
-                        bufferBytes.bytes.data() + bufferView.byteOffset);
+                const auto* ptr = reinterpret_cast<const unsigned char*>(
+                    bufferBytes.bytes.data() + bufferView.byteOffset);
 
-                int x, y, n;
+                int            x, y, n;
                 unsigned char* data = stbi_load_from_memory(
-                    ptr, static_cast<int>(bufferView.byteLength), &x, &y, &n,
+                    ptr,
+                    static_cast<int>(bufferView.byteLength),
+                    &x,
+                    &y,
+                    &n,
                     STBI_rgb_alpha);
                 if (!data) {
                     LOG_ERROR("failed to decode embedded image (BufferView)");
                     throw std::runtime_error("failed to decode embedded image");
                 }
-                ImageData img;
-                img.data = data;
-                img.width = x;
-                img.height = y;
-                img.channels = 4;
-                return img;
+                ImageData imageData;
+                imageData.data = data;
+                imageData.width = x;
+                imageData.height = y;
+                imageData.channels = 4;
+                return imageData;
             }},
         img.data);
 }
 
-void processImages(const fastgltf::Asset& gltf,
-                   Model& model,
-                   const std::string& parentPath) {
+void ProcessImages(const fastgltf::Asset& gltf,
+                   Model&                 model,
+                   const std::string&     parentPath) {
     std::vector<std::future<ImageData>> futures;
     futures.reserve(gltf.images.size());
 
     for (const auto& img : gltf.images) {
         futures.push_back(std::async(
             std::launch::async, [&gltf, &img, &parentPath]() -> ImageData {
-                return decodeGltfImage(gltf, img, parentPath);
+                return DecodeGltfImage(gltf, img, parentPath);
             }));
     }
 
@@ -263,28 +274,31 @@ void processImages(const fastgltf::Asset& gltf,
         images.push_back(future.get());
     }
 
-    model.images_ = std::move(images);
+    model.images = std::move(images);
 }
 }  // namespace
 
-Model AssetLoader::loadModelFromGltf(const std::string& pathToFile) {
-    Model model;
+Model AssetLoader::LoadModelFromGltf(const std::string& pathToFile) {
+    Model            model;
     fastgltf::Parser parser;
-    auto gltfFile = fastgltf::GltfDataBuffer::FromPath(pathToFile);
+    auto             gltfFile = fastgltf::GltfDataBuffer::FromPath(pathToFile);
 
     if (gltfFile.error() != fastgltf::Error::None) {
-        LOG_ERROR("failed to load glTF file {}: {}", pathToFile,
+        LOG_ERROR("failed to load glTF file {}: {}",
+                  pathToFile,
                   getErrorMessage(gltfFile.error()).data());
         throw std::runtime_error(getErrorMessage(gltfFile.error()).data());
     }
     std::filesystem::path path(pathToFile);
-    std::string parentPath = path.parent_path().string();
+    std::string           parentPath = path.parent_path().string();
 
-    auto asset = parser.loadGltf(gltfFile.get(), path.parent_path(),
+    auto asset = parser.loadGltf(gltfFile.get(),
+                                 path.parent_path(),
                                  fastgltf::Options::LoadExternalBuffers);
 
     if (asset.error() != fastgltf::Error::None) {
-        LOG_ERROR("failed to parse glTF asset {}: {}", pathToFile,
+        LOG_ERROR("failed to parse glTF asset {}: {}",
+                  pathToFile,
                   getErrorMessage(asset.error()).data());
         throw std::runtime_error(getErrorMessage(asset.error()).data());
     }
@@ -296,23 +310,23 @@ Model AssetLoader::loadModelFromGltf(const std::string& pathToFile) {
         throw std::runtime_error("glTF has no scenes");
     }
 
-    size_t sceneIndex = gltfAsset.defaultScene.value_or(0);
+    size_t      sceneIndex = gltfAsset.defaultScene.value_or(0);
     const auto& scene = gltfAsset.scenes[sceneIndex];
 
-    processMeshes(gltfAsset, model);
-    processNodes(gltfAsset, model);
-    processImages(gltfAsset, model, parentPath);
+    ProcessMeshes(gltfAsset, model);
+    ProcessNodes(gltfAsset, model);
+    ProcessImages(gltfAsset, model, parentPath);
 
     for (auto rootNodeIndex : scene.nodeIndices) {
-        model.rootNodes_.push_back(rootNodeIndex);
+        model.rootNodes.push_back(rootNodeIndex);
     }
 
     LOG_INFO("Loaded model from file: {}", pathToFile);
     return model;
 }
 
-ImageData AssetLoader::loadImageDataFromFile(const std::string& pathToFile) {
-    int x, y, n;
+ImageData AssetLoader::LoadImageDataFromFile(const std::string& pathToFile) {
+    int            x, y, n;
     unsigned char* data =
         stbi_load(pathToFile.c_str(), &x, &y, &n, STBI_rgb_alpha);
     if (!data) {

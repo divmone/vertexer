@@ -46,7 +46,7 @@ NativeWindowHandler GetNativeWindowHandler(SDL_Window* window) {
 // NO CLEAN CODE ↓
 
 #if defined(__APPLE__)
-NativeWindowHandler GetNativeWindowHandler(SDL_Window* window,
+NativeWindowHandler GetNativeWindowHandler(SDL_Window*   window,
                                            SDL_MetalView view) {
     MacOSWindowHandler macOS;
     // SDL_MetalView view

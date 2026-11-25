@@ -11,14 +11,14 @@
 #include <vector>
 
 struct Primitive {
-    uint32_t firstIndex;
-    uint32_t indexCount;
-    int32_t materialIndex{0};
-    int32_t textureIndex{0};
+    uint32_t  firstIndex;
+    uint32_t  indexCount;
+    int32_t   materialIndex{0};
+    int32_t   textureIndex{0};
     glm::vec4 color;
-    bool isBlend{false};
-    bool hasTexture{false};
-    int32_t distanceToCam{0};
+    bool      isBlend{false};
+    bool      hasTexture{false};
+    int32_t   distanceToCam{0};
 };
 
 struct Mesh {
@@ -28,8 +28,8 @@ struct Mesh {
 
 struct Node {
     std::vector<uint32_t> children;
-    int32_t meshIndex;
-    glm::mat4 transformation{1.0};
+    int32_t               meshIndex;
+    glm::mat4             transformation{1.0};
 };
 
 // //

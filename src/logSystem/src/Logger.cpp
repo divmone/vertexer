@@ -26,7 +26,9 @@ Logger::Logger(const std::string& appName, bool isDebug) {
     file->set_level(spdlog::level::trace);
 
     auto logger = std::make_shared<spdlog::async_logger>(
-        appName, spdlog::sinks_init_list{console, file}, spdlog::thread_pool(),
+        appName,
+        spdlog::sinks_init_list{console, file},
+        spdlog::thread_pool(),
         spdlog::async_overflow_policy::block);
 
     logger->set_level(spdlog::level::trace);

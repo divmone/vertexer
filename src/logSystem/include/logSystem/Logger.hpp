@@ -11,7 +11,7 @@ public:
     Logger(const std::string& appName, bool isDebug);
     ~Logger();
 
-    Logger(const Logger&)            = delete;
+    Logger(const Logger&) = delete;
     Logger& operator=(const Logger&) = delete;
 };
 

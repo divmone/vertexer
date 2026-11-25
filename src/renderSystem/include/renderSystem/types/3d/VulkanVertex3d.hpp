@@ -4,18 +4,21 @@
 
 #pragma once
 
+#include <array>
+#include <cstddef>
+#include <glm/glm.hpp>
 #include <typesSystem/Vertex3d.hpp>
 #include <vulkan/vulkan_raii.hpp>
 
 struct VulkanVertex3d : Vertex3d {
-    static vk::VertexInputBindingDescription getBindingDescription() {
+    static vk::VertexInputBindingDescription GetBindingDescription() {
         return {.binding = 0,
                 .stride = sizeof(Vertex3d),
                 .inputRate = vk::VertexInputRate::eVertex};
     }
 
     static std::array<vk::VertexInputAttributeDescription, 4>
-    getAttributeDescriptions() {
+    GetAttributeDescriptions() {
         return {{{.location = 0,
                   .binding = 0,
                   .format = vk::Format::eR32G32B32Sfloat,

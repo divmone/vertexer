@@ -12,9 +12,9 @@
 #include <windowSystem/SDLWindow.hpp>
 
 SDLWindow::SDLWindow(const char* title,
-                     const int width,
-                     const int height,
-                     bool isMaximize)
+                     const int   width,
+                     const int   height,
+                     bool        isMaximize)
     : title_(title), width_(width), height_(height) {
     if (!SDL_Init(SDL_INIT_VIDEO)) {
         LOG_ERROR("SDL_Init failed: %s", SDL_GetError());
@@ -114,11 +114,12 @@ std::vector<const char*> SDLWindow::GetExtensionNames() const {
     //                                  std::string(sdlExtensions[i]));
     //     }
     // }
+    return {};
 }
 
 ExtentProvider SDLWindow::GetExtentProvider() {
     ExtentProvider provider;
-    provider.GetExtentSizes = [&]() -> std::pair<std::uint32_t, std::uint32_t> {
+    provider.getExtentSizes = [&]() -> std::pair<std::uint32_t, std::uint32_t> {
         int width;
         int height;
         SDL_GetWindowSizeInPixels(window_, &width, &height);

@@ -4,11 +4,12 @@
 
 #pragma once
 
+#include <cstdint>
 #include <string>
 
 class FS {
 public:
-    enum class FileType {
+    enum class FileType : std::uint8_t {
         eNone = 0,
         eShader,
         ePipelineCache,
@@ -19,5 +20,5 @@ public:
     static std::string GetFullPath(FileType type, std::string_view path);
     constexpr static const char* GetProjectBinDir();
     constexpr static const char* GetProjectRootDir();
-    static std::string GetExePath();
+    static std::string           GetExePath();
 };

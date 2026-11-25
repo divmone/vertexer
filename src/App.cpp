@@ -4,171 +4,76 @@
 
 #include <App.hpp>
 #include <chrono>
-#include <resourceSystem/SceneLoader.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <typesSystem/EngineStats.hpp>
-
-#include "FileSystem.hpp"
-#include "resourceSystem/AssetLoader.hpp"
 
 App::App()
     : isRunning_(true),
       logger_("APP", true),
-      window_("APP", 1000, 1000, true),
-      vulkanContext_(window_.GetNativeHandler(), window_.GetExtentProvider()) {
+      window_("APP", 1200, 800, false),
+      vulkanContext_(window_.GetNativeHandler(), window_.GetExtentProvider()),
+      vulkan2dContext_(vulkanContext_),
+      vulkan3dContext_(vulkanContext_) {
+    // не совсем уверен насчёт этого всего
     window_.SetOnEvent([&](SDL_Event& e) {
-        if (e.type == SDL_EVENT_MOUSE_MOTION) {
-            // if (mouseMode) {
-            //     camera_.rotate(-e.motion.xrel, -e.motion.yrel);
-            // }
-        }
-        if (e.type == SDL_EVENT_KEY_DOWN) {
-            inputSystem_.onKeyDown(e.key.scancode);
-        }
-        if (e.type == SDL_EVENT_KEY_UP) {
-            inputSystem_.onKeyUp(e.key.scancode);
-        }
-        if (e.type == SDL_EVENT_WINDOW_MINIMIZED) {
-            vulkanContext_.recreateContext();
+        if (bool notConsumedByUi = ui_.ProcessEvent(e); !notConsumedByUi) {
             return;
         }
-        if (e.type == SDL_EVENT_WINDOW_RESIZED ||
-            e.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED) {
-            vulkanContext_.recreateContext();
+        if (e.type == SDL_EVENT_KEY_DOWN) {
+            inputSystem_.OnKeyDown(e.key.scancode);
         }
+        // ...
     });
+
     Init();
 }
 
 void App::Run() {
+    using namespace std::chrono;
+    using namespace std;
+
     EngineStats stats;
-    auto lastTime = std::chrono::high_resolution_clock::now();
+    auto        lastTime = high_resolution_clock::now();
 
     while (isRunning_) {
         isRunning_ = window_.ProcessEvent();
 
-        auto now = std::chrono::high_resolution_clock::now();
-
-        float deltaTime = std::chrono::duration<float>(now - lastTime).count();
+        auto  now = high_resolution_clock::now();
+        float deltaTime = chrono::duration<float>(now - lastTime).count();
         lastTime = now;
 
         Update(deltaTime);
 
-        DrawSprites();
-        vulkanContext_.renderFrame(scene_, stats);
+        ui_.Update();
+        ui_.Render();
+        vulkanContext_.Present2d(stats, vulkan2dContext_);
 
-        auto end = std::chrono::high_resolution_clock::now();
-
-        auto elapsed =
-            std::chrono::duration_cast<std::chrono::microseconds>(end - now);
+        auto end = high_resolution_clock::now();
+        auto elapsed = std::chrono::duration_cast<microseconds>(end - now);
         stats.frameTime = elapsed.count() / 1000.0f;
-        inputSystem_.endFrame();
+
+        inputSystem_.EndFrame();
     }
 }
 
 void App::Init() {
-    vulkanContext_.setProjMatrix(
-        glm::perspective(glm::radians(45.0f),
-                         static_cast<float>(window_.GetWidth()) /
-                             static_cast<float>(window_.GetHeight()),
-                         0.1f, 1000.0f));
+    auto [width, height] = window_.GetExtentProvider().getExtentSizes();
 
-    vulkanContext_.SetProj2dMatrix(glm::orthoZO(
-        0.0f, static_cast<float>(window_.GetWidth()),
-        static_cast<float>(window_.GetHeight()), 0.0f, 0.0f, 10.0f));
+    vulkan3dContext_.Init();
+    vulkan2dContext_.Init();
 
-    InitScene();
+    // RmlUi uses a top-left origin. Vulkan's Y axis points down in NDC, so
+    // bottom/top are intentionally passed in this order.
+    vulkan2dContext_.SetProj2dMatrix(glm::orthoZO(0.0f,
+                                                  static_cast<float>(width),
+                                                  0.0f,
+                                                  static_cast<float>(height),
+                                                  0.0f,
+                                                  10.0f));
+
+    ui_.Init(window_, vulkan2dContext_);
 }
 
-void App::InitScene() {
-    auto scenePath = FS::GetFullPath(FS::FileType::eScene, "scene");
-    auto meshData = SceneLoader::LoadSceneMeshData(scenePath);
-
-    for (const auto& model : meshData.models_) {
-        vulkanContext_.AddModel(model);
-    }
-
-    SpriteData spriteData;
-    constexpr std::array<Vertex2d, 4> quadVertices = {{
-        // Position        Color                     UV
-        {{-1.0f, -1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},  // Top-left
-        {{1.0f, -1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}},   // Top-right
-        {{1.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},  // Bottom-right
-        {{-1.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},  // Bottom-left
-    }};
-
-    constexpr std::array<uint32_t, 6> quadIndices = {0, 1, 2, 2, 3, 0};
-
-    spriteData.vertices_.assign(quadVertices.begin(), quadVertices.end());
-    spriteData.indices_.assign(quadIndices.begin(), quadIndices.end());
-    spriteData.image_ = AssetLoader::loadImageDataFromFile(
-        FS::GetFullPath(FS::FileType::eAsset, "test2.jpg"));
-
-    Sprite sprite;
-    sprite.handle_ = vulkanContext_.AddSprite(spriteData);
-    sprite.transform_.pos_ = {500.0f, 500.0f};
-    sprite.transform_.scale_ = {100.0f, 100.0f};
-
-    sprites_.push_back(sprite);
-
-    sprite.transform_.pos_ = {2000.0f, 500.0f};
-    sprite.transform_.scale_ = {500.0f, 500.0f};
-    sprites_.push_back(sprite);
-
-    Sprite sprite2;
-    spriteData.image_ = AssetLoader::loadImageDataFromFile(
-        FS::GetFullPath(FS::FileType::eAsset, "test.jpg"));
-    sprite2.handle_ = vulkanContext_.AddSprite(spriteData);
-    sprite2.transform_.pos_ = {0.0f, 0.0f};
-    sprite2.transform_.scale_ = {300.0f, 300.0f};
-    sprites_.push_back(sprite);
-
-    // TODO fix this bad code ↓ ↓ ↓ ↓ ↓ ↓
-    vulkanContext_.finishLoading();
-
-    // TODO fix this bad code ↓ ↓ ↓ ↓ ↓ ↓
-    scene_ = SceneLoader::LoadSceneFromJSON(scenePath);
-}
-
-void App::Update(float deltaTime) {
-    if (inputSystem_.isHeld(SDL_SCANCODE_UP) ||
-        inputSystem_.isHeld(SDL_SCANCODE_W)) {
-        camera_.move(CameraDirections::Backward, deltaTime);
-    }
-    if (inputSystem_.isHeld(SDL_SCANCODE_DOWN) ||
-        inputSystem_.isHeld(SDL_SCANCODE_S)) {
-        camera_.move(CameraDirections::Forward, deltaTime);
-    }
-    if (inputSystem_.isHeld(SDL_SCANCODE_LEFT) ||
-        inputSystem_.isHeld(SDL_SCANCODE_A)) {
-        camera_.move(CameraDirections::Left, deltaTime);
-    }
-    if (inputSystem_.isHeld(SDL_SCANCODE_RIGHT) ||
-        inputSystem_.isHeld(SDL_SCANCODE_D)) {
-        camera_.move(CameraDirections::Right, deltaTime);
-    }
-    if (inputSystem_.isHeld(SDL_SCANCODE_E)) {
-        camera_.move(CameraDirections::Up, deltaTime);
-    }
-    if (inputSystem_.isHeld(SDL_SCANCODE_Q)) {
-        camera_.move(CameraDirections::Down, deltaTime);
-    }
-    if (inputSystem_.isPressed(SDL_SCANCODE_1)) {
-        // mouseMode = !mouseMode;
-        // SDL_SetWindowRelativeMouseMode(window_.getHandle(), mouseMode);
-    }
-    if (inputSystem_.isHeld(SDL_SCANCODE_ESCAPE)) {
-        SDL_Event e;
-        e.type = SDL_EVENT_QUIT;
-        SDL_PushEvent(&e);
-    }
-
-    camera_.update(deltaTime);
-
-    vulkanContext_.setViewMatrix(camera_.getLookAt());
-}
-
-void App::DrawSprites() {
-    for (const auto& sprite : sprites_) {
-        vulkanContext_.DrawSprite(sprite);
-    }
+void App::Update(float deltaTime) const {
+    (void)deltaTime;
 }

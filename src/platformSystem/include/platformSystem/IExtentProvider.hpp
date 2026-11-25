@@ -4,11 +4,10 @@
 
 #pragma once
 
-#include <cstdint>
 #include <functional>
 
 struct ExtentProvider {
-    std::function<std::pair<std::uint32_t, std::uint32_t>()> GetExtentSizes;
+    std::function<std::pair<std::uint32_t, std::uint32_t>()> getExtentSizes;
 };
 
 struct IExtentProvider {
