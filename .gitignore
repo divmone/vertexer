@@ -8,3 +8,6 @@
 /out
 /tests/cmake-build-debug/
 /.vscode
+/docs/html
+/docs/latex
+/docs/man
